@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -32,13 +32,25 @@ export async function GET(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const amount = 10.00;
 
+    // Get user email from Clerk if signed in
+    let userEmail = 'guest@me2you.co.za';
+    if (userId) {
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        userEmail = user.emailAddresses?.[0]?.emailAddress || userEmail;
+      } catch (e) {
+        // Clerk lookup failed, use fallback
+      }
+    }
+
     // Create order record
     const [order] = await db
       .insert(orders)
       .values({
         giftId: giftData.id,
         userId: userId || null,
-        email: 'guest@me2you.co.za',
+        email: userEmail,
         amount: String(amount),
         currency: 'zar',
         status: 'pending',
@@ -51,6 +63,7 @@ export async function GET(request: NextRequest) {
       amount,
       itemName: `Me2You Gift for ${giftData.recipientName}`,
       itemDescription: 'Personalized gift website',
+      emailAddress: userEmail !== 'guest@me2you.co.za' ? userEmail : undefined,
       returnUrl: `${appUrl}/payment/success?orderId=${order.id}&giftId=${giftData.id}`,
       cancelUrl: `${appUrl}/payment/cancel?orderId=${order.id}`,
       notifyUrl: `${appUrl}/api/payment/notify`,

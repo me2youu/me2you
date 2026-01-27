@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generatePayFastPayment } from '@/lib/payfast';
 
 // POST - Create a PayFast payment session for a gift
+// NOTE: The primary flow now uses /api/payment/redirect (GET).
+// This endpoint is kept as a fallback.
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
     const body = await request.json();
-    const { giftId, email } = body;
+    const { giftId } = body;
 
     if (!giftId) {
       return NextResponse.json({ error: 'Gift ID is required' }, { status: 400 });
     }
 
-    // Fetch the gift
     const gift = await db
       .select()
       .from(gifts)
@@ -29,31 +30,38 @@ export async function POST(request: NextRequest) {
 
     const giftData = gift[0];
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    // For MVP, use a fixed price (e.g., R10.00 per gift)
-    // TODO: Pull price from template.basePrice when ready
     const amount = 10.00;
 
-    // Create order record
+    // Get user email from Clerk if signed in
+    let userEmail = 'guest@me2you.co.za';
+    if (userId) {
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        userEmail = user.emailAddresses?.[0]?.emailAddress || userEmail;
+      } catch (e) {
+        // Clerk lookup failed, use fallback
+      }
+    }
+
     const [order] = await db
       .insert(orders)
       .values({
         giftId: giftData.id,
         userId: userId || null,
-        email: email || 'guest@me2you.co.za',
+        email: userEmail,
         amount: String(amount),
         currency: 'zar',
         status: 'pending',
       })
       .returning();
 
-    // Generate PayFast payment data
     const payment = generatePayFastPayment({
       orderId: order.id,
       amount,
       itemName: `Me2You Gift for ${giftData.recipientName}`,
-      itemDescription: `Personalized gift website`,
-      emailAddress: email,
+      itemDescription: 'Personalized gift website',
+      emailAddress: userEmail !== 'guest@me2you.co.za' ? userEmail : undefined,
       returnUrl: `${appUrl}/payment/success?orderId=${order.id}&giftId=${giftData.id}`,
       cancelUrl: `${appUrl}/payment/cancel?orderId=${order.id}`,
       notifyUrl: `${appUrl}/api/payment/notify`,
