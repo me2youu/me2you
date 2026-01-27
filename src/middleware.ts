@@ -6,7 +6,16 @@ const isProtectedRoute = createRouteMatcher([
   '/customize(.*)',
 ]);
 
+// Routes that should skip Clerk entirely (external webhooks with no auth context)
+const isWebhookRoute = createRouteMatcher([
+  '/api/payment/notify',
+  '/api/webhooks(.*)',
+]);
+
 export default clerkMiddleware(async (auth, req) => {
+  // Skip auth entirely for external webhooks
+  if (isWebhookRoute(req)) return;
+
   if (isProtectedRoute(req)) {
     await auth.protect();
   }

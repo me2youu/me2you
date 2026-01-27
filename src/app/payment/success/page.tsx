@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
@@ -13,6 +13,19 @@ function PaymentSuccessContent() {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const giftUrl = `${appUrl}/gift/${giftId}`;
+
+  // Confirm the order on page load (fallback for when ITN webhook doesn't fire)
+  useEffect(() => {
+    if (orderId) {
+      fetch('/api/payment/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      }).catch(() => {
+        // Silent fail - ITN webhook is the primary confirmation
+      });
+    }
+  }, [orderId]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(giftUrl);
