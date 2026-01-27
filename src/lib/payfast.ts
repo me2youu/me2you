@@ -35,9 +35,7 @@ interface PayFastPaymentData {
  * Generate PayFast payment form data with signature
  */
 export function generatePayFastPayment(data: PayFastPaymentData) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-  // Build the payment data object (order matters for signature!)
+  // Build the payment data object - ORDER MATTERS for signature
   const paymentData: Record<string, string> = {
     merchant_id: PAYFAST_CONFIG.merchantId,
     merchant_key: PAYFAST_CONFIG.merchantKey,
@@ -58,7 +56,7 @@ export function generatePayFastPayment(data: PayFastPaymentData) {
   }
 
   // Generate signature
-  paymentData.signature = generateSignature(paymentData);
+  paymentData.signature = generateSignature(paymentData, PAYFAST_CONFIG.passphrase);
 
   return {
     paymentUrl: getPayFastUrl(),
@@ -68,22 +66,24 @@ export function generatePayFastPayment(data: PayFastPaymentData) {
 
 /**
  * Generate MD5 signature for PayFast
- * The signature is an MD5 hash of the URL-encoded parameter string
+ * 
+ * PayFast signature rules:
+ * - Use raw (non-encoded) values in the signature string
+ * - Trim whitespace from values
+ * - Exclude empty values and the 'signature' key itself
+ * - Only append passphrase if it is a non-empty string
  */
 export function generateSignature(data: Record<string, string>, passphrase?: string): string {
-  const phrase = passphrase ?? PAYFAST_CONFIG.passphrase;
-
-  // Create parameter string (alphabetical order is NOT required - use insertion order)
-  // But we must exclude 'signature' itself
-  const params = Object.entries(data)
-    .filter(([key]) => key !== 'signature')
-    .map(([key, value]) => `${key}=${encodeURIComponent(String(value)).replace(/%20/g, '+')}`)
+  // Build parameter string from the data - use raw values, NOT URL-encoded
+  const pfOutput = Object.entries(data)
+    .filter(([key, value]) => key !== 'signature' && value !== undefined && value !== '')
+    .map(([key, value]) => `${key}=${String(value).trim()}`)
     .join('&');
 
-  // Append passphrase if set
-  const signatureString = phrase
-    ? `${params}&passphrase=${encodeURIComponent(phrase).replace(/%20/g, '+')}`
-    : params;
+  // Only append passphrase if it's a non-empty string
+  const signatureString = passphrase && passphrase.length > 0
+    ? `${pfOutput}&passphrase=${passphrase.trim()}`
+    : pfOutput;
 
   return crypto.createHash('md5').update(signatureString).digest('hex');
 }
@@ -94,7 +94,7 @@ export function generateSignature(data: Record<string, string>, passphrase?: str
 export async function validateITN(body: Record<string, string>): Promise<boolean> {
   // 1. Verify signature
   const receivedSignature = body.signature;
-  const calculatedSignature = generateSignature(body);
+  const calculatedSignature = generateSignature(body, PAYFAST_CONFIG.passphrase);
 
   if (receivedSignature !== calculatedSignature) {
     console.error('PayFast ITN: Signature mismatch');
