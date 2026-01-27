@@ -78,8 +78,8 @@ export default function Home() {
               className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
             >
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-sm text-gray-400 mb-8">
-                <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-                Free during beta
+                <span className="w-2 h-2 rounded-full bg-accent-purple animate-pulse" />
+                Only R10 per gift
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold font-poppins mb-6 leading-tight">

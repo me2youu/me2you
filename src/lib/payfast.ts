@@ -189,7 +189,7 @@ export async function validateITN(body: Record<string, string>): Promise<boolean
  * PayFast sandbox test credentials
  * Merchant ID: 10000100
  * Merchant Key: 46f0cd694581a
- * Passphrase: (leave empty for sandbox)
+ * Passphrase: jt7NOE43FZPn (required for sandbox)
  * 
  * Test buyer:
  * Email: sbtu01@payfast.co.za
