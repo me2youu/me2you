@@ -20,6 +20,47 @@ export function getPayFastValidateUrl() {
     : 'https://www.payfast.co.za/eng/query/validate';
 }
 
+// PayFast requires fields in this EXACT order for signature generation
+const PAYFAST_FIELD_ORDER = [
+  'merchant_id',
+  'merchant_key',
+  'return_url',
+  'cancel_url',
+  'notify_url',
+  'notify_method',
+  'name_first',
+  'name_last',
+  'email_address',
+  'cell_number',
+  'm_payment_id',
+  'amount',
+  'item_name',
+  'item_description',
+  'custom_int1',
+  'custom_int2',
+  'custom_int3',
+  'custom_int4',
+  'custom_int5',
+  'custom_str1',
+  'custom_str2',
+  'custom_str3',
+  'custom_str4',
+  'custom_str5',
+  'email_confirmation',
+  'confirmation_address',
+  'currency',
+  'payment_method',
+  'subscription_type',
+  'passphrase',
+  'billing_date',
+  'recurring_amount',
+  'frequency',
+  'cycles',
+  'subscription_notify_email',
+  'subscription_notify_webhook',
+  'subscription_notify_buyer',
+];
+
 interface PayFastPaymentData {
   orderId: string;
   amount: number; // in ZAR
@@ -35,7 +76,7 @@ interface PayFastPaymentData {
  * Generate PayFast payment form data with signature
  */
 export function generatePayFastPayment(data: PayFastPaymentData) {
-  // Build the payment data object - ORDER MATTERS for signature
+  // Build the payment data object
   const paymentData: Record<string, string> = {
     merchant_id: PAYFAST_CONFIG.merchantId,
     merchant_key: PAYFAST_CONFIG.merchantKey,
@@ -65,27 +106,49 @@ export function generatePayFastPayment(data: PayFastPaymentData) {
 }
 
 /**
- * Generate MD5 signature for PayFast
+ * PHP-compatible urlencode
+ * PHP's urlencode encodes spaces as '+' and encodes ~ as %7E etc.
+ */
+function phpUrlencode(str: string): string {
+  return encodeURIComponent(str)
+    .replace(/%20/g, '+')
+    .replace(/!/g, '%21')
+    .replace(/'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A');
+}
+
+/**
+ * Generate MD5 signature for PayFast payment integrations.
  * 
- * PayFast signature rules:
- * - Use raw (non-encoded) values in the signature string
- * - Trim whitespace from values
- * - Exclude empty values and the 'signature' key itself
- * - Only append passphrase if it is a non-empty string
+ * Based on PayFast's official PHP SDK (Auth::generateSignature):
+ * - Fields must be in PayFast's defined order
+ * - Values are URL-encoded using PHP-style urlencode (spaces = +)
+ * - Empty values are excluded
+ * - Passphrase is appended (URL-encoded) if non-empty
  */
 export function generateSignature(data: Record<string, string>, passphrase?: string): string {
-  // Build parameter string from the data - use raw values, NOT URL-encoded
-  const pfOutput = Object.entries(data)
-    .filter(([key, value]) => key !== 'signature' && value !== undefined && value !== '')
-    .map(([key, value]) => `${key}=${String(value).trim()}`)
+  // Build sorted data - only include fields in the PayFast order, skip empty
+  const sortedData: Record<string, string> = {};
+  for (const field of PAYFAST_FIELD_ORDER) {
+    if (field === 'passphrase' || field === 'signature') continue;
+    if (data[field] !== undefined && data[field] !== '') {
+      sortedData[field] = data[field];
+    }
+  }
+
+  // Append passphrase if non-empty
+  if (passphrase !== undefined && passphrase !== null && passphrase !== '') {
+    sortedData['passphrase'] = passphrase.trim();
+  }
+
+  // Create parameter string: key=urlencode(trim(value))&...
+  const pfOutput = Object.entries(sortedData)
+    .map(([key, value]) => `${key}=${phpUrlencode(String(value).trim())}`)
     .join('&');
 
-  // Only append passphrase if it's a non-empty string
-  const signatureString = passphrase && passphrase.length > 0
-    ? `${pfOutput}&passphrase=${passphrase.trim()}`
-    : pfOutput;
-
-  return crypto.createHash('md5').update(signatureString).digest('hex');
+  return crypto.createHash('md5').update(pfOutput).digest('hex');
 }
 
 /**
