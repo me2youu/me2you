@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .update(orders)
       .set({
         status,
-        stripePaymentId: pfPaymentId, // Reusing this field for PayFast payment ID
+        payfastPaymentId: pfPaymentId,
       })
       .where(eq(orders.id, orderId));
 

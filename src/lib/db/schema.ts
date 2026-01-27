@@ -1,10 +1,14 @@
 import { pgTable, text, timestamp, uuid, decimal, integer, jsonb, boolean, varchar } from 'drizzle-orm/pg-core';
 
-// Users table (linked to Clerk)
+// Users table (synced from Clerk via webhook)
 export const users = pgTable('users', {
   id: text('id').primaryKey(), // Clerk user ID
   email: text('email').notNull().unique(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  imageUrl: text('image_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
   totalSpent: decimal('total_spent', { precision: 10, scale: 2 }).default('0'),
 });
 
@@ -25,7 +29,7 @@ export const templates = pgTable('templates', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// Add-ons table
+// Add-ons table (future use)
 export const addons = pgTable('addons', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
@@ -49,7 +53,7 @@ export const gifts = pgTable('gifts', {
   shortUrl: varchar('short_url', { length: 12 }).notNull().unique(), // Same as id
   viewCount: integer('view_count').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  expiresAt: timestamp('expires_at'), // Optional expiration
+  expiresAt: timestamp('expires_at'), // Optional expiration (future use)
 });
 
 // Orders table
@@ -58,10 +62,10 @@ export const orders = pgTable('orders', {
   giftId: varchar('gift_id', { length: 12 }).references(() => gifts.id).notNull(),
   userId: text('user_id'), // Nullable for guest checkouts
   email: text('email').notNull(),
-  stripePaymentId: text('stripe_payment_id'),
+  payfastPaymentId: text('payfast_payment_id'), // PayFast pf_payment_id
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').default('usd').notNull(),
-  status: text('status').notNull(), // 'pending', 'completed', 'refunded'
+  status: text('status').notNull(), // 'pending', 'completed', 'failed', 'cancelled'
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
