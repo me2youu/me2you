@@ -168,37 +168,8 @@ export default function CustomizePage() {
 
       const gift = await response.json();
 
-      // 2. Initiate PayFast payment
-      const paymentRes = await fetch('/api/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ giftId: gift.id }),
-      });
-
-      if (!paymentRes.ok) {
-        // Payment setup failed - still redirect to success (free beta fallback)
-        console.warn('Payment creation failed, falling back to free flow');
-        router.push(`/success?giftId=${gift.id}`);
-        return;
-      }
-
-      const paymentData = await paymentRes.json();
-
-      // 3. Redirect to PayFast via hidden form submission
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = paymentData.paymentUrl;
-
-      Object.entries(paymentData.paymentData).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
+      // 2. Redirect to server-side PayFast form (handles signature + form submission)
+      window.location.href = `/api/payment/redirect?giftId=${gift.id}`;
     } catch (err: any) {
       setError(err.message);
     } finally {
