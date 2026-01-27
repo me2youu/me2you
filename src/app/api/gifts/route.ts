@@ -1,0 +1,161 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { gifts, templates } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
+import { auth } from '@clerk/nextjs/server';
+
+// Sanitize user input to prevent XSS
+function escapeHtml(str: string): string {
+  if (typeof str !== 'string') return String(str ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Fields that should NOT be escaped (contain intentional HTML/URLs)
+const RAW_FIELDS = new Set([
+  'imageUrl', 'thumbnailUrl', 'audioUrl', 'videoUrl',
+  // Add any template fields that intentionally hold HTML or URLs
+]);
+
+// Helper function to render template with custom data
+function renderTemplate(
+  htmlTemplate: string,
+  cssTemplate: string | null,
+  jsTemplate: string | null,
+  customData: Record<string, any>
+): string {
+  let rendered = htmlTemplate;
+
+  // Replace all {{variable}} placeholders with sanitized values
+  Object.keys(customData).forEach((key) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    const value = customData[key] || '';
+    // Escape user-provided text fields, but leave URLs/HTML fields raw
+    const safeValue = RAW_FIELDS.has(key) ? String(value) : escapeHtml(String(value));
+    rendered = rendered.replace(regex, safeValue);
+  });
+
+  // Inject CSS if provided
+  if (cssTemplate) {
+    rendered = rendered.replace(
+      '</head>',
+      `<style>${cssTemplate}</style></head>`
+    );
+  }
+
+  // Inject JS if provided
+  if (jsTemplate) {
+    rendered = rendered.replace(
+      '</body>',
+      `<script>${jsTemplate}</script></body>`
+    );
+  }
+
+  return rendered;
+}
+
+// POST create new gift
+export async function POST(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    const body = await request.json();
+    const {
+      templateId,
+      recipientName,
+      customMessage,
+      customData,
+      selectedAddons,
+    } = body;
+
+    // Validate required fields
+    if (!templateId || !recipientName) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch the template
+    const template = await db
+      .select()
+      .from(templates)
+      .where(eq(templates.id, templateId))
+      .limit(1);
+
+    if (!template.length) {
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+    }
+
+    // Merge custom data with defaults
+    const allCustomData = {
+      recipientName,
+      customMessage: customMessage || '',
+      ...customData,
+    };
+
+    // Render the HTML snapshot
+    const htmlSnapshot = renderTemplate(
+      template[0].htmlTemplate,
+      template[0].cssTemplate,
+      template[0].jsTemplate,
+      allCustomData
+    );
+
+    // Generate unique ID
+    const giftId = nanoid(12);
+
+    // Create the gift
+    const newGift = await db
+      .insert(gifts)
+      .values({
+        id: giftId,
+        shortUrl: giftId,
+        templateId,
+        createdBy: userId || null,
+        recipientName,
+        customMessage: customMessage || null,
+        customData: allCustomData,
+        selectedAddons: selectedAddons || null,
+        htmlSnapshot,
+        viewCount: 0,
+      })
+      .returning();
+
+    return NextResponse.json(newGift[0], { status: 201 });
+  } catch (error) {
+    console.error('Error creating gift:', error);
+    return NextResponse.json(
+      { error: 'Failed to create gift' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET all gifts (for user dashboard)
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userGifts = await db
+      .select()
+      .from(gifts)
+      .where(eq(gifts.createdBy, userId));
+
+    return NextResponse.json(userGifts);
+  } catch (error) {
+    console.error('Error fetching gifts:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch gifts' },
+      { status: 500 }
+    );
+  }
+}
