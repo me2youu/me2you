@@ -63,13 +63,14 @@ const PAYFAST_FIELD_ORDER = [
 
 interface PayFastPaymentData {
   orderId: string;
-  amount: number; // in ZAR
+  amount: number; // in USD
   itemName: string;
   itemDescription?: string;
   emailAddress?: string;
   returnUrl: string;
   cancelUrl: string;
   notifyUrl: string;
+  currency?: string; // defaults to USD
 }
 
 /**
@@ -86,6 +87,7 @@ export function generatePayFastPayment(data: PayFastPaymentData) {
     m_payment_id: data.orderId,
     amount: data.amount.toFixed(2),
     item_name: data.itemName,
+    currency: data.currency || 'USD',
   };
 
   if (data.itemDescription) {

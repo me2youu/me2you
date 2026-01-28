@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { gifts, orders } from '@/lib/db/schema';
+import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generatePayFastPayment } from '@/lib/payfast';
 
@@ -29,8 +29,22 @@ export async function GET(request: NextRequest) {
     }
 
     const giftData = gift[0];
+
+    // Fetch the template to get the USD price
+    const template = await db
+      .select()
+      .from(templates)
+      .where(eq(templates.id, giftData.templateId))
+      .limit(1);
+
+    if (!template.length) {
+      return new NextResponse('Template not found', { status: 404 });
+    }
+
+    // Get USD price from template
+    const amount = parseFloat(template[0].basePrice);
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const amount = 10.00;
 
     // Get user email from Clerk if signed in
     let userEmail = 'guest@me2you.co.za';
@@ -44,7 +58,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Create order record
+    // Create order record (in USD)
     const [order] = await db
       .insert(orders)
       .values({
@@ -52,15 +66,16 @@ export async function GET(request: NextRequest) {
         userId: userId || null,
         email: userEmail,
         amount: String(amount),
-        currency: 'zar',
+        currency: 'usd',
         status: 'pending',
       })
       .returning();
 
-    // Generate PayFast payment data
+    // Generate PayFast payment data (USD - PayFast handles conversion)
     const payment = generatePayFastPayment({
       orderId: order.id,
       amount,
+      currency: 'USD',
       itemName: `Me2You Gift for ${giftData.recipientName}`,
       itemDescription: 'Personalized gift website',
       emailAddress: userEmail !== 'guest@me2you.co.za' ? userEmail : undefined,

@@ -8,6 +8,7 @@ interface Template {
   id: string;
   name: string;
   description: string;
+  basePrice: string;
 }
 
 // Color cycle for template cards
@@ -41,6 +42,11 @@ export default function Home() {
     { name: "Apology", slug: "apology" },
     { name: "Get Well", slug: "get-well" },
   ];
+
+  // Compute lowest price from templates
+  const lowestPrice = dbTemplates.length > 0
+    ? Math.min(...dbTemplates.map(t => parseFloat(t.basePrice || '0'))).toFixed(2)
+    : '1.49';
 
   // Fallback to hardcoded previews if DB fetch hasn't resolved yet
   const templatePreviews = dbTemplates.length > 0
@@ -79,7 +85,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-sm text-gray-400 mb-8">
                 <span className="w-2 h-2 rounded-full bg-accent-purple animate-pulse" />
-                Only R10 per gift
+                From ${lowestPrice} USD per gift
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold font-poppins mb-6 leading-tight">

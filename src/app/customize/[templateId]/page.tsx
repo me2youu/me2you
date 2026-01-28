@@ -340,12 +340,12 @@ export default function CustomizePage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <span className="text-2xl font-bold text-gradient bg-gradient-to-r from-accent-purple to-accent-pink">
-                    R10.00
+                    ${parseFloat(template?.basePrice || '0').toFixed(2)}
                   </span>
-                  <span className="text-xs text-gray-600 ml-2">once-off</span>
+                  <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
                 </div>
                 <span className="text-xs bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-full font-medium">
-                  PayFast Secure
+                  Secure Checkout
                 </span>
               </div>
 
@@ -361,7 +361,7 @@ export default function CustomizePage() {
                 disabled={creating || !formData.recipientName?.trim()}
                 className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {creating ? 'Processing...' : 'Create & Pay R10'}
+                {creating ? 'Processing...' : `Create & Pay $${parseFloat(template?.basePrice || '0').toFixed(2)}`}
               </button>
             </div>
           </div>
