@@ -147,6 +147,12 @@ export async function POST(request: NextRequest) {
       shortUrl = customUrl;
     }
 
+    // Build selectedAddons - include custom-url if they chose one
+    const addons = selectedAddons || [];
+    if (customUrl) {
+      addons.push({ type: 'custom-url', url: customUrl, price: 2.00 });
+    }
+
     // Create the gift
     const newGift = await db
       .insert(gifts)
@@ -158,7 +164,7 @@ export async function POST(request: NextRequest) {
         recipientName,
         customMessage: customMessage || null,
         customData: allCustomData,
-        selectedAddons: selectedAddons || null,
+        selectedAddons: addons.length > 0 ? addons : null,
         htmlSnapshot,
         viewCount: 0,
       })
