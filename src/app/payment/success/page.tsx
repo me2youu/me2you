@@ -10,9 +10,22 @@ function PaymentSuccessContent() {
   const giftId = searchParams.get('giftId');
   const orderId = searchParams.get('orderId');
   const [copied, setCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const giftUrl = `${appUrl}/gift/${giftId}`;
+  const giftUrl = `${appUrl}/gift/${shortUrl || giftId}`;
+
+  // Fetch gift to get the correct shortUrl (for custom URLs)
+  useEffect(() => {
+    if (giftId) {
+      fetch(`/api/gifts/${giftId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.shortUrl) setShortUrl(data.shortUrl);
+        })
+        .catch(() => {});
+    }
+  }, [giftId]);
 
   // Confirm the order on page load (fallback for when ITN webhook doesn't fire)
   useEffect(() => {
@@ -74,7 +87,7 @@ function PaymentSuccessContent() {
 
             {/* Preview */}
             <Link
-              href={`/gift/${giftId}`}
+              href={`/gift/${shortUrl || giftId}`}
               target="_blank"
               className="inline-flex items-center gap-2 text-accent-purple hover:text-accent-pink transition-colors text-sm font-medium mb-6"
             >

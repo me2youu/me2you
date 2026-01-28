@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { gifts } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 
 // This page renders the actual gift for recipients
 export default async function GiftPage({
@@ -11,23 +11,23 @@ export default async function GiftPage({
 }) {
   // Await params (Next.js 15+ requirement)
   const { id } = await params;
-  
-  // Fetch the gift
+
+  // Fetch the gift by ID or shortUrl (for custom URLs)
   const gift = await db
     .select()
     .from(gifts)
-    .where(eq(gifts.id, id))
+    .where(or(eq(gifts.id, id), eq(gifts.shortUrl, id)))
     .limit(1);
 
   if (!gift.length) {
     notFound();
   }
 
-  // Increment view count (server action would be better but this works for MVP)
+  // Increment view count
   await db
     .update(gifts)
     .set({ viewCount: gift[0].viewCount + 1 })
-    .where(eq(gifts.id, id));
+    .where(eq(gifts.id, gift[0].id));
 
   const giftData = gift[0];
 
@@ -47,11 +47,11 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
+
   const gift = await db
     .select()
     .from(gifts)
-    .where(eq(gifts.id, id))
+    .where(or(eq(gifts.id, id), eq(gifts.shortUrl, id)))
     .limit(1);
 
   if (!gift.length) {

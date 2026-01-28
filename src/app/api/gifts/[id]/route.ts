@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { gifts } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 
-// GET single gift by ID
+// GET single gift by ID or shortUrl
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
+
+    // Look up by either id OR shortUrl (for custom URLs)
     const gift = await db
       .select()
       .from(gifts)
-      .where(eq(gifts.id, id))
+      .where(or(eq(gifts.id, id), eq(gifts.shortUrl, id)))
       .limit(1);
 
     if (!gift.length) {
@@ -25,7 +26,7 @@ export async function GET(
     await db
       .update(gifts)
       .set({ viewCount: gift[0].viewCount + 1 })
-      .where(eq(gifts.id, id));
+      .where(eq(gifts.id, gift[0].id));
 
     return NextResponse.json(gift[0]);
   } catch (error) {
