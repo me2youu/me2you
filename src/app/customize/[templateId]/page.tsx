@@ -59,6 +59,18 @@ export default function CustomizePage() {
   const [showPreview, setShowPreview] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
+  // Custom URL addon state
+  const [wantCustomUrl, setWantCustomUrl] = useState(false);
+  const [customUrl, setCustomUrl] = useState('');
+  const [customUrlStatus, setCustomUrlStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [previewUrl] = useState(() => {
+    // Generate a random preview URL to show what they'd get without the addon
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+  });
+
   useEffect(() => {
     fetchTemplate();
   }, [templateId]);
@@ -138,10 +150,45 @@ export default function CustomizePage() {
     return html;
   };
 
+  // Check custom URL availability
+  const checkCustomUrl = async (url: string) => {
+    if (!url || url.length < 3) {
+      setCustomUrlStatus('idle');
+      return;
+    }
+
+    setCustomUrlStatus('checking');
+    try {
+      const res = await fetch(`/api/gifts/check-url?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      setCustomUrlStatus(data.available ? 'available' : data.error?.includes('format') ? 'invalid' : 'taken');
+    } catch {
+      setCustomUrlStatus('idle');
+    }
+  };
+
+  // Debounced URL check
+  useEffect(() => {
+    if (!wantCustomUrl || !customUrl) return;
+    const timer = setTimeout(() => checkCustomUrl(customUrl), 500);
+    return () => clearTimeout(timer);
+  }, [customUrl, wantCustomUrl]);
+
+  // Calculate total price
+  const basePrice = parseFloat(template?.basePrice || '0');
+  const addonPrice = wantCustomUrl && customUrlStatus === 'available' ? 2.00 : 0;
+  const totalPrice = basePrice + addonPrice;
+
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
     if (!recipientName) {
       setError("Please enter the recipient's name");
+      return;
+    }
+
+    // Validate custom URL if selected
+    if (wantCustomUrl && customUrlStatus !== 'available') {
+      setError('Please enter a valid, available custom URL');
       return;
     }
 
@@ -158,6 +205,7 @@ export default function CustomizePage() {
           recipientName,
           customMessage: formData.customMessage || '',
           customData: formData,
+          customUrl: wantCustomUrl && customUrlStatus === 'available' ? customUrl : undefined,
         }),
       });
 
@@ -335,14 +383,100 @@ export default function CustomizePage() {
               )}
             </div>
 
-            {/* Actions */}
+            {/* Custom URL Addon */}
             <div className="border-t border-white/5 pt-6 mt-6">
+              <div className="glass rounded-xl p-4 mb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="text-white font-medium text-sm">Your gift URL</h4>
+                    <p className="text-gray-500 text-xs mt-0.5">How people will access your gift</p>
+                  </div>
+                  <span className="text-xs bg-accent-green/10 text-accent-green px-2 py-1 rounded-full">
+                    +$2.00
+                  </span>
+                </div>
+
+                {/* Default URL preview */}
+                <div className={`rounded-lg p-3 mb-3 ${wantCustomUrl ? 'bg-dark-800/50' : 'bg-dark-800 border border-white/10'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="defaultUrl"
+                        checked={!wantCustomUrl}
+                        onChange={() => setWantCustomUrl(false)}
+                        className="w-4 h-4 text-accent-purple bg-dark-700 border-white/20"
+                      />
+                      <label htmlFor="defaultUrl" className="text-sm cursor-pointer">
+                        <span className="text-gray-400">Free:</span>{' '}
+                        <code className="text-gray-300 bg-dark-700 px-2 py-0.5 rounded text-xs">
+                          me2you.world/gift/{previewUrl}
+                        </code>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom URL option */}
+                <div className={`rounded-lg p-3 ${wantCustomUrl ? 'bg-dark-800 border border-accent-purple/30' : 'bg-dark-800/50'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="radio"
+                      id="customUrlOption"
+                      checked={wantCustomUrl}
+                      onChange={() => setWantCustomUrl(true)}
+                      className="w-4 h-4 text-accent-purple bg-dark-700 border-white/20"
+                    />
+                    <label htmlFor="customUrlOption" className="text-sm cursor-pointer">
+                      <span className="text-gray-400">Custom (+$2):</span>{' '}
+                      <span className="text-white">Choose your own URL</span>
+                    </label>
+                  </div>
+
+                  {wantCustomUrl && (
+                    <div className="ml-6 mt-2">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                        <span>me2you.world/gift/</span>
+                        <input
+                          type="text"
+                          value={customUrl}
+                          onChange={(e) => setCustomUrl(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                          placeholder="your-custom-url"
+                          className="flex-1 bg-dark-700 border border-white/10 rounded px-2 py-1.5 text-white placeholder-gray-600 focus:border-accent-purple/50 outline-none"
+                          maxLength={30}
+                        />
+                      </div>
+                      <div className="text-xs">
+                        {customUrlStatus === 'checking' && (
+                          <span className="text-gray-400">Checking availability...</span>
+                        )}
+                        {customUrlStatus === 'available' && (
+                          <span className="text-accent-green">✓ Available!</span>
+                        )}
+                        {customUrlStatus === 'taken' && (
+                          <span className="text-red-400">✗ Already taken</span>
+                        )}
+                        {customUrlStatus === 'invalid' && (
+                          <span className="text-red-400">✗ 3-30 chars, letters, numbers, hyphens only</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="border-t border-white/5 pt-6">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <span className="text-2xl font-bold text-gradient bg-gradient-to-r from-accent-purple to-accent-pink">
-                    ${parseFloat(template?.basePrice || '0').toFixed(2)}
+                    ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
+                  {addonPrice > 0 && (
+                    <span className="text-xs text-accent-green ml-2">(incl. custom URL)</span>
+                  )}
                 </div>
                 <span className="text-xs bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-full font-medium">
                   Secure Checkout
@@ -358,10 +492,10 @@ export default function CustomizePage() {
 
               <button
                 onClick={handleCreateGift}
-                disabled={creating || !formData.recipientName?.trim()}
+                disabled={creating || !formData.recipientName?.trim() || (wantCustomUrl && customUrlStatus !== 'available')}
                 className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {creating ? 'Processing...' : `Create & Pay $${parseFloat(template?.basePrice || '0').toFixed(2)}`}
+                {creating ? 'Processing...' : `Create & Pay $${totalPrice.toFixed(2)}`}
               </button>
             </div>
           </div>

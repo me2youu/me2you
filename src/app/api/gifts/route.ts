@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       customMessage,
       customData,
       selectedAddons,
+      customUrl, // Optional custom URL addon
     } = body;
 
     // Validate required fields
@@ -117,12 +118,41 @@ export async function POST(request: NextRequest) {
     // Generate unique ID
     const giftId = nanoid(12);
 
+    // Determine shortUrl - custom if provided and valid, otherwise use giftId
+    let shortUrl = giftId;
+    if (customUrl) {
+      // Validate custom URL format
+      const urlRegex = /^[a-zA-Z0-9-]{3,30}$/;
+      if (!urlRegex.test(customUrl)) {
+        return NextResponse.json(
+          { error: 'Custom URL must be 3-30 characters, letters, numbers, and hyphens only' },
+          { status: 400 }
+        );
+      }
+
+      // Check if URL is available
+      const existing = await db
+        .select({ id: gifts.id })
+        .from(gifts)
+        .where(eq(gifts.shortUrl, customUrl))
+        .limit(1);
+
+      if (existing.length > 0) {
+        return NextResponse.json(
+          { error: 'This custom URL is already taken' },
+          { status: 400 }
+        );
+      }
+
+      shortUrl = customUrl;
+    }
+
     // Create the gift
     const newGift = await db
       .insert(gifts)
       .values({
         id: giftId,
-        shortUrl: giftId,
+        shortUrl,
         templateId,
         createdBy: userId,
         recipientName,

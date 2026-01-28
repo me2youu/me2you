@@ -42,7 +42,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get USD price from template
-    const amount = parseFloat(template[0].basePrice);
+    let amount = parseFloat(template[0].basePrice);
+
+    // Check for custom URL addon (+$2)
+    const hasCustomUrl = giftData.shortUrl !== giftData.id;
+    if (hasCustomUrl) {
+      amount += 2.00;
+    }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

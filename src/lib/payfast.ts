@@ -87,8 +87,12 @@ export function generatePayFastPayment(data: PayFastPaymentData) {
     m_payment_id: data.orderId,
     amount: data.amount.toFixed(2),
     item_name: data.itemName,
-    currency: data.currency || 'USD',
   };
+
+  // Only add currency for production (sandbox doesn't support multi-currency)
+  if (!PAYFAST_CONFIG.sandbox && data.currency) {
+    paymentData.currency = data.currency;
+  }
 
   if (data.itemDescription) {
     paymentData.item_description = data.itemDescription;
