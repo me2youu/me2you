@@ -128,6 +128,10 @@ const upgradedScratchCard = `<!DOCTYPE html>
       color: #e5e5e5;
       text-align: center;
       max-width: 90%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
     }
 
     /* Scratch canvas */
@@ -283,15 +287,26 @@ const upgradedScratchCard = `<!DOCTYPE html>
     const enableSound = '{{enableSound}}' === 'true';
     const enableHaptics = 'vibrate' in navigator;
 
-    // Pre-init AudioContext on first user touch (browsers require gesture)
+    // Pre-init AudioContext on first touch (iOS requires unlock via silent buffer)
     let audioCtx = null;
+    let audioUnlocked = false;
     function initAudio() {
-      if (audioCtx || !enableSound) return;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        // Resume in case it's suspended
+      if (!enableSound) return;
+      if (!audioCtx) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) { return; }
+      }
+      if (!audioUnlocked) {
+        // iOS unlock: play a silent buffer in the user gesture handler
+        const buf = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
         if (audioCtx.state === 'suspended') audioCtx.resume();
-      } catch(e) {}
+        audioUnlocked = true;
+      }
     }
 
     // Set canvas size
@@ -463,8 +478,9 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     // Play reveal sound (Web Audio API) - uses pre-initialized context
     function playRevealSound() {
-      if (!audioCtx) return;
+      if (!audioCtx || !audioUnlocked) return;
       try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         // Play ascending chime: C5 → E5 → G5 → C6
         const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, i) => {

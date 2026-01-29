@@ -257,16 +257,24 @@ export default function CustomizePage() {
     const baseClass = "w-full px-4 py-3 bg-dark-800 border border-white/10 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all";
 
     switch (variable.type) {
-      case 'textarea':
+      case 'textarea': {
+        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 200;
         return (
-          <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className={`${baseClass} resize-none`}
-            rows={variable.name.includes('final') || variable.name.includes('letter') ? 5 : 3}
-            placeholder={variable.placeholder || `Enter ${variable.label.toLowerCase()}...`}
-          />
+          <div>
+            <textarea
+              value={value}
+              onChange={(e) => { if (e.target.value.length <= maxLen) onChange(e.target.value); }}
+              className={`${baseClass} resize-none`}
+              rows={variable.name.includes('final') || variable.name.includes('letter') ? 5 : 3}
+              placeholder={variable.placeholder || `Enter ${variable.label.toLowerCase()}...`}
+              maxLength={maxLen}
+            />
+            <p className={`text-xs mt-1 text-right ${value.length > maxLen * 0.9 ? 'text-accent-pink' : 'text-gray-600'}`}>
+              {value.length}/{maxLen}
+            </p>
+          </div>
         );
+      }
 
       case 'date':
       case 'datetime':
@@ -329,6 +337,7 @@ export default function CustomizePage() {
             className={baseClass}
             placeholder={variable.placeholder || `Enter ${variable.label.toLowerCase()}...`}
             required={variable.required}
+            maxLength={80}
           />
         );
     }

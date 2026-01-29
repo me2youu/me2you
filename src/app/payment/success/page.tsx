@@ -11,6 +11,7 @@ function PaymentSuccessContent() {
   const orderId = searchParams.get('orderId');
   const [copied, setCopied] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shared, setShared] = useState(false);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const giftUrl = `${appUrl}/gift/${shortUrl || giftId}`;
@@ -44,6 +45,23 @@ function PaymentSuccessContent() {
     navigator.clipboard.writeText(giftUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareGift = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'I made you something special!',
+          text: 'Open this link for a surprise gift I made just for you!',
+          url: giftUrl,
+        });
+        setShared(true);
+      } catch (e) {
+        // User cancelled share
+      }
+    } else {
+      copyToClipboard();
+    }
   };
 
   return (
@@ -84,6 +102,23 @@ function PaymentSuccessContent() {
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
+
+            {/* Share Button */}
+            <button
+              onClick={shareGift}
+              className="w-full mb-4 bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all flex items-center justify-center gap-2"
+            >
+              {shared ? (
+                <>Shared!</>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Share Gift
+                </>
+              )}
+            </button>
 
             {/* Preview */}
             <Link
