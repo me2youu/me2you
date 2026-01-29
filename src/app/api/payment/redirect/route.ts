@@ -44,9 +44,18 @@ export async function GET(request: NextRequest) {
     // Get USD price from template
     let amount = parseFloat(template[0].basePrice);
 
-    // Check for custom URL addon (+$2)
+    // Add addon prices from selectedAddons stored in the gift
+    if (giftData.selectedAddons && Array.isArray(giftData.selectedAddons)) {
+      for (const addon of giftData.selectedAddons as { type: string; price: number }[]) {
+        amount += addon.price || 0;
+      }
+    }
+
+    // Check for custom URL addon (+$2) - already included in selectedAddons if present
+    // but check shortUrl mismatch as fallback
     const hasCustomUrl = giftData.shortUrl !== giftData.id;
-    if (hasCustomUrl) {
+    const hasCustomUrlAddon = (giftData.selectedAddons as any[])?.some((a: any) => a.type === 'custom-url');
+    if (hasCustomUrl && !hasCustomUrlAddon) {
       amount += 2.00;
     }
 

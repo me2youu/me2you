@@ -229,30 +229,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
       50% { transform: scale(1.3); }
     }
 
-    /* Share button (shown after reveal) */
-    .share-btn {
-      margin-top: 2rem;
-      padding: 0.8rem 2rem;
-      background: linear-gradient(135deg, #a855f7, #ec4899);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.5s ease;
-      display: none;
-    }
-    .revealed .share-btn {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .share-btn:active {
-      transform: scale(0.95);
-    }
+
   </style>
 </head>
 <body>
@@ -282,7 +259,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <button class="share-btn" id="share-btn">Share This Gift 💫</button>
+
   </div>
 
   <div id="confetti-container"></div>
@@ -305,6 +282,17 @@ const upgradedScratchCard = `<!DOCTYPE html>
     const enableSparkles = '{{enableSparkles}}' === 'true';
     const enableSound = '{{enableSound}}' === 'true';
     const enableHaptics = 'vibrate' in navigator;
+
+    // Pre-init AudioContext on first user touch (browsers require gesture)
+    let audioCtx = null;
+    function initAudio() {
+      if (audioCtx || !enableSound) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Resume in case it's suspended
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch(e) {}
+    }
 
     // Set canvas size
     function resizeCanvas() {
@@ -473,50 +461,34 @@ const upgradedScratchCard = `<!DOCTYPE html>
       }
     }
 
-    // Play reveal sound (Web Audio API)
+    // Play reveal sound (Web Audio API) - uses pre-initialized context
     function playRevealSound() {
+      if (!audioCtx) return;
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
-        
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.5);
+        // Play ascending chime: C5 → E5 → G5 → C6
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          const startTime = audioCtx.currentTime + i * 0.12;
+          gain.gain.setValueAtTime(0, startTime);
+          gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+          
+          osc.start(startTime);
+          osc.stop(startTime + 0.4);
+        });
       } catch (e) {}
     }
 
-    // Share functionality
-    document.getElementById('share-btn').addEventListener('click', async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'I got a surprise gift!',
-            text: 'Someone sent me a special scratch card! 💝',
-            url: window.location.href
-          });
-        } catch (e) {}
-      } else {
-        // Fallback: copy link
-        navigator.clipboard.writeText(window.location.href);
-        document.getElementById('share-btn').textContent = 'Link Copied! ✓';
-        setTimeout(() => {
-          document.getElementById('share-btn').textContent = 'Share This Gift 💫';
-        }, 2000);
-      }
-    });
-
     // Event listeners
     canvas.addEventListener('mousedown', (e) => {
+      initAudio();
       isScratching = true;
       const pos = getPos(e);
       scratch(pos.x, pos.y);
@@ -532,6 +504,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      initAudio();
       isScratching = true;
       const pos = getPos(e);
       scratch(pos.x, pos.y);

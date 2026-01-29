@@ -213,6 +213,11 @@ export default function CustomizePage() {
     setError('');
 
     try {
+      // Build selected addons array for pricing
+      const enabledAddons = availableAddons
+        .filter(a => formData[a] === 'true')
+        .map(a => ({ type: a, price: ADDON_PRICE }));
+
       // 1. Create the gift
       const response = await fetch('/api/gifts', {
         method: 'POST',
@@ -222,6 +227,7 @@ export default function CustomizePage() {
           recipientName,
           customMessage: formData.customMessage || '',
           customData: formData,
+          selectedAddons: enabledAddons,
           customUrl: wantCustomUrl && customUrlStatus === 'available' ? customUrl : undefined,
         }),
       });
