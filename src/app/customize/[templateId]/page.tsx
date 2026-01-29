@@ -25,6 +25,14 @@ interface TemplateVariable {
   required?: boolean;
 }
 
+// Addon definitions - variables starting with "enable" are treated as paid addons
+const ADDON_PRICE = 0.50;
+const ADDON_DETAILS: Record<string, { label: string; description: string; icon: string }> = {
+  enableConfetti: { label: 'Confetti Burst', description: 'Celebrate with a confetti explosion on reveal', icon: '🎉' },
+  enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles follow your finger while scratching', icon: '✨' },
+  enableSound: { label: 'Sound Effects', description: 'Play a celebration sound on reveal', icon: '🔊' },
+};
+
 // Smart field type detection based on variable name
 function detectFieldType(varName: string): TemplateVariable['type'] {
   const lower = varName.toLowerCase();
@@ -125,7 +133,15 @@ export default function CustomizePage() {
 
   const templateVariables = useMemo(() => {
     if (!template) return [];
-    return extractVariables(template.htmlTemplate);
+    return extractVariables(template.htmlTemplate).filter(v => !v.name.startsWith('enable'));
+  }, [template]);
+
+  // Detect which addons this template supports
+  const availableAddons = useMemo(() => {
+    if (!template) return [];
+    return extractVariables(template.htmlTemplate)
+      .filter(v => v.name.startsWith('enable') && ADDON_DETAILS[v.name])
+      .map(v => v.name);
   }, [template]);
 
   const renderPreview = () => {
@@ -173,10 +189,12 @@ export default function CustomizePage() {
     return () => clearTimeout(timer);
   }, [customUrl, wantCustomUrl]);
 
-  // Calculate total price
+  // Calculate total price (base + addons + custom URL)
   const basePrice = parseFloat(template?.basePrice || '0');
-  const addonPrice = wantCustomUrl && customUrlStatus === 'available' ? 2.00 : 0;
-  const totalPrice = basePrice + addonPrice;
+  const customUrlPrice = wantCustomUrl && customUrlStatus === 'available' ? 2.00 : 0;
+  const enabledAddonsCount = availableAddons.filter(a => formData[a] === 'true').length;
+  const addonsPrice = enabledAddonsCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -382,6 +400,49 @@ export default function CustomizePage() {
               )}
             </div>
 
+            {/* Effect Addons */}
+            {availableAddons.length > 0 && (
+              <div className="border-t border-white/5 pt-6 mt-6">
+                <h4 className="text-white font-semibold text-sm mb-3">Add Effects</h4>
+                <div className="space-y-3">
+                  {availableAddons.map((addonKey) => {
+                    const addon = ADDON_DETAILS[addonKey];
+                    const isEnabled = formData[addonKey] === 'true';
+                    return (
+                      <button
+                        key={addonKey}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, [addonKey]: isEnabled ? 'false' : 'true' })}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                          isEnabled
+                            ? 'bg-accent-purple/10 border-accent-purple/30'
+                            : 'bg-dark-800/50 border-white/5 hover:border-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{addon.icon}</span>
+                          <div className="text-left">
+                            <p className="text-white text-sm font-medium">{addon.label}</p>
+                            <p className="text-gray-500 text-xs">{addon.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-accent-green text-xs font-medium">+$0.50</span>
+                          <div className={`w-10 h-6 rounded-full transition-all flex items-center ${
+                            isEnabled ? 'bg-accent-purple justify-end' : 'bg-dark-700 justify-start'
+                          }`}>
+                            <div className={`w-5 h-5 rounded-full bg-white shadow mx-0.5 transition-all ${
+                              isEnabled ? 'scale-100' : 'scale-90 opacity-60'
+                            }`} />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Custom URL Addon */}
             <div className="border-t border-white/5 pt-6 mt-6">
               <div className="glass rounded-xl p-4 mb-4">
@@ -473,8 +534,13 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {addonPrice > 0 && (
-                    <span className="text-xs text-accent-green ml-2">(incl. custom URL)</span>
+                  {(addonsPrice > 0 || customUrlPrice > 0) && (
+                    <span className="text-xs text-accent-green ml-2">
+                      (incl. {[
+                        enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
+                        customUrlPrice > 0 ? 'custom URL' : ''
+                      ].filter(Boolean).join(' + ')})
+                    </span>
                   )}
                 </div>
                 <span className="text-xs bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-full font-medium">

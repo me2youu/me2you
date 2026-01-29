@@ -300,9 +300,9 @@ const upgradedScratchCard = `<!DOCTYPE html>
     let revealed = false;
     let scratchPercent = 0;
     
-    // Addon flags (will be replaced by template engine)
+    // Addon flags (replaced by template engine from customData)
     const enableConfetti = '{{enableConfetti}}' === 'true';
-    const enableSparkles = '{{enableSparkles}}' === 'true' || true; // Default on
+    const enableSparkles = '{{enableSparkles}}' === 'true';
     const enableSound = '{{enableSound}}' === 'true';
     const enableHaptics = 'vibrate' in navigator;
 
@@ -380,27 +380,17 @@ const upgradedScratchCard = `<!DOCTYPE html>
       setTimeout(() => sparkle.remove(), 600);
     }
 
-    // Scratch function
+    // Scratch function - coordinates are in CSS pixels (ctx.scale handles DPR)
     function scratch(x, y) {
-      const ratio = window.devicePixelRatio;
       ctx.globalCompositeOperation = 'destination-out';
       
-      // Main scratch circle
+      // Main scratch circle (small radius for satisfying scratch feel)
       ctx.beginPath();
-      ctx.arc(x * ratio, y * ratio, 28 * ratio, 0, Math.PI * 2);
+      ctx.arc(x, y, 18, 0, Math.PI * 2);
       ctx.fill();
       
-      // Softer edge
-      const gradient = ctx.createRadialGradient(x * ratio, y * ratio, 20 * ratio, x * ratio, y * ratio, 35 * ratio);
-      gradient.addColorStop(0, 'rgba(0,0,0,1)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(x * ratio, y * ratio, 35 * ratio, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Create sparkles
-      for (let i = 0; i < 2; i++) {
+      // Create sparkle occasionally
+      if (enableSparkles && Math.random() > 0.5) {
         createSparkle(x, y);
       }
       
