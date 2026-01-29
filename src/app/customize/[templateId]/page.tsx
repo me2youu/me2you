@@ -56,7 +56,6 @@ export default function CustomizePage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
   // Custom URL addon state
@@ -484,13 +483,6 @@ export default function CustomizePage() {
               </div>
 
               <button
-                onClick={() => setShowPreview(!showPreview)}
-                className="w-full mb-3 glass text-gray-300 py-3 rounded-lg font-medium hover:bg-dark-600/80 transition-all text-sm"
-              >
-                {showPreview ? 'Hide Preview' : 'Show Preview'}
-              </button>
-
-              <button
                 onClick={handleCreateGift}
                 disabled={creating || !formData.recipientName?.trim() || (wantCustomUrl && customUrlStatus !== 'available')}
                 className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -503,7 +495,13 @@ export default function CustomizePage() {
           {/* Preview */}
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Preview</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-white">Live Preview</h3>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green"></span>
+                </span>
+              </div>
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-500/60" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
@@ -511,23 +509,17 @@ export default function CustomizePage() {
               </div>
             </div>
 
-            {showPreview ? (
-              <div className="rounded-lg overflow-hidden bg-dark-900 border border-white/5">
-                <iframe
-                  srcDoc={renderPreview()}
-                  className="w-full h-[600px]"
-                  title="Gift Preview"
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-white/10 h-[600px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-4 opacity-20">👁️</div>
-                  <p className="text-gray-600 text-sm">Click "Show Preview" to see your gift</p>
-                </div>
-              </div>
-            )}
+            <div className="rounded-lg overflow-hidden bg-dark-900 border border-white/5">
+              <iframe
+                srcDoc={renderPreview()}
+                className="w-full h-[600px]"
+                title="Gift Preview"
+                sandbox="allow-scripts allow-same-origin"
+              />
+            </div>
+            <p className="text-center text-gray-600 text-xs mt-3">
+              Live preview - updates as you type
+            </p>
           </div>
         </div>
       </main>
