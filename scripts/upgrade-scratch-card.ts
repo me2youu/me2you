@@ -87,6 +87,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
     .scratch-card {
       position: relative;
       width: 100%;
+      min-height: 220px;
       aspect-ratio: 16/11;
       border-radius: 16px;
       overflow: hidden;
@@ -96,7 +97,6 @@ const upgradedScratchCard = `<!DOCTYPE html>
         0 0 0 1px rgba(255,255,255,0.1),
         0 20px 50px -10px rgba(168, 85, 247, 0.3),
         0 10px 30px -5px rgba(0,0,0,0.5);
-      transition: box-shadow 0.3s ease;
     }
 
     /* Hidden message underneath */
@@ -222,20 +222,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
       100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
     }
 
-    /* Revealed state */
-    .revealed .scratch-card {
-      box-shadow: 
-        0 0 0 1px rgba(168, 85, 247, 0.3),
-        0 0 60px -10px rgba(168, 85, 247, 0.5),
-        0 20px 50px -10px rgba(168, 85, 247, 0.4);
-    }
-    .revealed .message-icon {
-      animation: celebrateBounce 0.5s ease;
-    }
-    @keyframes celebrateBounce {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-    }
+
 
 
   </style>
@@ -251,7 +238,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     <div class="scratch-card" id="scratch-card">
       <div class="message-layer">
-        <div class="message-icon"><img src="/images/icons/heart.png" alt="heart" /></div>
+        <div class="message-icon"><img src="https://me2you.world/images/icons/heart.png" alt="" /></div>
         <p class="message-text">{{customMessage}}</p>
       </div>
       <canvas id="scratch-canvas"></canvas>
@@ -408,18 +395,17 @@ const upgradedScratchCard = `<!DOCTYPE html>
       }
     }
 
-    // Reveal the message
+    // Reveal the message - just fade the canvas, nothing else changes
     function revealMessage() {
       revealed = true;
       
-      // Fade out canvas
+      // Fade out scratch surface
       canvas.style.transition = 'opacity 0.8s ease';
       canvas.style.opacity = '0';
       
-      // Hide hint, show revealed state
-      hint.style.display = 'none';
-      document.getElementById('progress-container').style.display = 'none';
-      container.classList.add('revealed');
+      // Hide hint and progress
+      hint.style.opacity = '0';
+      progressBar.parentElement.style.opacity = '0';
       
       // Haptic celebration
       if (enableHaptics) {
@@ -430,8 +416,6 @@ const upgradedScratchCard = `<!DOCTYPE html>
       if (enableConfetti) {
         launchConfetti();
       }
-      
-
     }
 
     // Launch confetti
