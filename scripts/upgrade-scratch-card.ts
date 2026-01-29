@@ -21,7 +21,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 0.75rem;
       overflow: hidden;
       position: relative;
     }
@@ -55,10 +55,11 @@ const upgradedScratchCard = `<!DOCTYPE html>
       max-width: 400px;
       position: relative;
       z-index: 1;
+      padding: 0;
     }
 
     .header {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
     .subtitle {
       font-size: 0.9rem;
@@ -86,8 +87,8 @@ const upgradedScratchCard = `<!DOCTYPE html>
     .scratch-card {
       position: relative;
       width: 100%;
-      aspect-ratio: 16/10;
-      border-radius: 20px;
+      aspect-ratio: 16/11;
+      border-radius: 16px;
       overflow: hidden;
       cursor: crosshair;
       touch-action: none;
@@ -114,9 +115,15 @@ const upgradedScratchCard = `<!DOCTYPE html>
       padding: 1.5rem;
     }
     .message-icon {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0.75rem;
       animation: bounce 2s ease infinite;
+    }
+    .message-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
@@ -247,7 +254,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     <div class="scratch-card" id="scratch-card">
       <div class="message-layer">
-        <div class="message-icon">💝</div>
+        <div class="message-icon"><img src="/images/icons/heart.png" alt="heart" /></div>
         <p class="message-text">{{customMessage}}</p>
       </div>
       <canvas id="scratch-canvas"></canvas>
@@ -287,26 +294,22 @@ const upgradedScratchCard = `<!DOCTYPE html>
     const enableSound = '{{enableSound}}' === 'true';
     const enableHaptics = 'vibrate' in navigator;
 
-    // Pre-init AudioContext on first touch (iOS requires unlock via silent buffer)
+    // Audio setup - use both AudioContext AND an HTML Audio element for iOS compat
     let audioCtx = null;
-    let audioUnlocked = false;
+    let audioReady = false;
     function initAudio() {
-      if (!enableSound) return;
-      if (!audioCtx) {
-        try {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch(e) { return; }
-      }
-      if (!audioUnlocked) {
-        // iOS unlock: play a silent buffer in the user gesture handler
+      if (!enableSound || audioReady) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // iOS unlock: create + play silent buffer in gesture handler
         const buf = audioCtx.createBuffer(1, 1, 22050);
         const src = audioCtx.createBufferSource();
         src.buffer = buf;
         src.connect(audioCtx.destination);
         src.start(0);
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        audioUnlocked = true;
-      }
+        audioCtx.resume().then(() => { audioReady = true; });
+        audioReady = true;
+      } catch(e) {}
     }
 
     // Set canvas size
@@ -478,9 +481,9 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     // Play reveal sound (Web Audio API) - uses pre-initialized context
     function playRevealSound() {
-      if (!audioCtx || !audioUnlocked) return;
+      if (!audioCtx || !audioReady) return;
       try {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
         // Play ascending chime: C5 → E5 → G5 → C6
         const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, i) => {
