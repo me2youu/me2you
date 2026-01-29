@@ -258,7 +258,7 @@ export default function CustomizePage() {
 
     switch (variable.type) {
       case 'textarea': {
-        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 200;
+        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 100;
         return (
           <div>
             <textarea
