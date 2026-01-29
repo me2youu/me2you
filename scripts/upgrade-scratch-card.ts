@@ -96,11 +96,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
         0 0 0 1px rgba(255,255,255,0.1),
         0 20px 50px -10px rgba(168, 85, 247, 0.3),
         0 10px 30px -5px rgba(0,0,0,0.5);
-      transform: perspective(1000px) rotateX(2deg);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .scratch-card:active {
-      transform: perspective(1000px) rotateX(0deg) scale(0.98);
+      transition: box-shadow 0.3s ease;
     }
 
     /* Hidden message underneath */
@@ -291,26 +287,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
     // Addon flags (replaced by template engine from customData)
     const enableConfetti = '{{enableConfetti}}' === 'true';
     const enableSparkles = '{{enableSparkles}}' === 'true';
-    const enableSound = '{{enableSound}}' === 'true';
     const enableHaptics = 'vibrate' in navigator;
-
-    // Audio setup - use both AudioContext AND an HTML Audio element for iOS compat
-    let audioCtx = null;
-    let audioReady = false;
-    function initAudio() {
-      if (!enableSound || audioReady) return;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        // iOS unlock: create + play silent buffer in gesture handler
-        const buf = audioCtx.createBuffer(1, 1, 22050);
-        const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioCtx.destination);
-        src.start(0);
-        audioCtx.resume().then(() => { audioReady = true; });
-        audioReady = true;
-      } catch(e) {}
-    }
 
     // Set canvas size
     function resizeCanvas() {
@@ -453,10 +430,7 @@ const upgradedScratchCard = `<!DOCTYPE html>
         launchConfetti();
       }
       
-      // Sound effect
-      if (enableSound) {
-        playRevealSound();
-      }
+
     }
 
     // Launch confetti
@@ -479,35 +453,10 @@ const upgradedScratchCard = `<!DOCTYPE html>
       }
     }
 
-    // Play reveal sound (Web Audio API) - uses pre-initialized context
-    function playRevealSound() {
-      if (!audioCtx || !audioReady) return;
-      try {
-        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-        // Play ascending chime: C5 → E5 → G5 → C6
-        const notes = [523.25, 659.25, 783.99, 1046.50];
-        notes.forEach((freq, i) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          
-          const startTime = audioCtx.currentTime + i * 0.12;
-          gain.gain.setValueAtTime(0, startTime);
-          gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
-          
-          osc.start(startTime);
-          osc.stop(startTime + 0.4);
-        });
-      } catch (e) {}
-    }
+
 
     // Event listeners
     canvas.addEventListener('mousedown', (e) => {
-      initAudio();
       isScratching = true;
       const pos = getPos(e);
       scratch(pos.x, pos.y);
@@ -523,7 +472,6 @@ const upgradedScratchCard = `<!DOCTYPE html>
 
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      initAudio();
       isScratching = true;
       const pos = getPos(e);
       scratch(pos.x, pos.y);

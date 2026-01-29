@@ -30,7 +30,6 @@ const ADDON_PRICE = 0.50;
 const ADDON_DETAILS: Record<string, { label: string; description: string; icon: string }> = {
   enableConfetti: { label: 'Confetti Burst', description: 'Celebrate with a confetti explosion on reveal', icon: '🎉' },
   enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles follow your finger while scratching', icon: '✨' },
-  enableSound: { label: 'Sound Effects', description: 'Play a celebration sound on reveal', icon: '🔊' },
 };
 
 // Smart field type detection based on variable name
