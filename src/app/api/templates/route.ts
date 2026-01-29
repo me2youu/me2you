@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@clerk/nextjs/server';
 import { isAdmin } from '@/lib/admin';
 
-// GET all active templates
+// GET all active templates (cached for 1 hour)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
       allTemplates = allTemplates.filter((t) => t.occasion.includes(occasion));
     }
 
-    return NextResponse.json(allTemplates);
+    return NextResponse.json(allTemplates, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    });
   } catch (error) {
     console.error('Error fetching templates:', error);
     return NextResponse.json(

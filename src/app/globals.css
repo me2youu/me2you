@@ -55,6 +55,13 @@ body {
     @apply bg-dark-800/50 backdrop-blur-xl border border-white/5;
   }
 
+  /* Glass strong */
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   /* Glow effects */
   .glow-purple {
     box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
@@ -67,5 +74,74 @@ body {
   }
   .glow-teal {
     box-shadow: 0 0 30px rgba(20, 184, 166, 0.15);
+  }
+}
+
+/* Landing page animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes particle {
+  0%, 100% { 
+    transform: translateY(0) translateX(0);
+    opacity: 0.2;
+  }
+  50% { 
+    transform: translateY(-40px) translateX(10px);
+    opacity: 0.4;
+  }
+}
+
+.animate-float { animation: float 8s ease-in-out infinite; }
+.animate-float-delayed { animation: float-delayed 10s ease-in-out infinite 2s; }
+.animate-blink { animation: blink 1s step-end infinite; }
+.animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
+.animate-particle { animation: particle linear infinite; }
+
+.animation-delay-100 { animation-delay: 0.1s; opacity: 0; }
+.animation-delay-200 { animation-delay: 0.2s; opacity: 0; }
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-delayed,
+  .animate-blink,
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-particle {
+    animation: none !important;
+  }
+  .animation-delay-100,
+  .animation-delay-200 {
+    opacity: 1 !important;
   }
 }
