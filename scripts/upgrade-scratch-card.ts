@@ -111,19 +111,20 @@ const upgradedScratchCard = `<!DOCTYPE html>
       padding: 1.5rem;
     }
     .message-icon {
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       margin-bottom: 0.75rem;
-      animation: bounce 2s ease infinite;
+      animation: heartPulse 1.5s ease-in-out infinite;
     }
     .message-icon img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.4));
     }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
     }
     .message-text {
       font-size: clamp(1rem, 4vw, 1.3rem);
