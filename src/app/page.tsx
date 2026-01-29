@@ -52,18 +52,33 @@ export default async function Home() {
       {/* Animated Background - CSS only, no JS */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Gradient Orbs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-accent-purple/20 rounded-full blur-[80px] md:blur-[120px] animate-float" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-accent-pink/20 rounded-full blur-[80px] md:blur-[120px] animate-float-delayed" />
+        <div className="absolute top-[-20%] left-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[100px] md:blur-[150px] animate-float" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[100px] md:blur-[150px] animate-float-delayed" />
+        <div className="absolute top-[40%] right-[20%] w-[300px] md:w-[400px] h-[300px] md:h-[400px] bg-accent-blue/10 rounded-full blur-[80px] md:blur-[120px] animate-float-slow" />
+        <div className="absolute bottom-[30%] left-[15%] w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-accent-teal/10 rounded-full blur-[60px] md:blur-[100px] animate-float-delayed" />
         
-        {/* Grid Pattern - desktop only */}
+        {/* Glowing accent lines */}
+        <div className="absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-purple/20 to-transparent animate-pulse-slow" />
+        <div className="absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow animation-delay-200" />
+        <div className="absolute top-[85%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/10 to-transparent animate-pulse-slow animation-delay-100" />
+        
+        {/* Radial gradient overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,10,15,0.4)_70%,rgba(10,10,15,0.8)_100%)]" />
+        
+        {/* Grid Pattern */}
         <div 
-          className="hidden md:block absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.015] md:opacity-[0.025]"
           style={{
-            backgroundImage: `linear-gradient(rgba(168,85,247,0.3) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(168,85,247,0.3) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px'
+            backgroundImage: `linear-gradient(rgba(168,85,247,0.4) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(168,85,247,0.4) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px'
           }}
         />
+        
+        {/* Noise texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+        }} />
       </div>
 
       <div className="relative z-10">
