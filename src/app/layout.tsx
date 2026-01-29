@@ -17,6 +17,15 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Me2You - Tiny Websites as Gifts",
   description: "Create fun, interactive mini websites as gifts for anyone. Pick a template, customize it, share a link.",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  openGraph: {
+    title: 'Me2You - Tiny Websites as Gifts',
+    description: 'Create fun, interactive mini websites as gifts for anyone.',
+    images: ['/logo.png'],
+  },
 };
 
 export default function RootLayout({

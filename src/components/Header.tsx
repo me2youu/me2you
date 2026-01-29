@@ -17,13 +17,12 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <nav className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center text-white font-bold text-sm group-hover:scale-110 transition-transform">
-              m2
-            </div>
-            <span className="text-lg font-bold font-poppins text-white">
-              Me2You
-            </span>
+          <Link href="/" className="flex items-center group">
+            <img 
+              src="/logo-small.png" 
+              alt="Me2You" 
+              className="h-10 w-auto group-hover:scale-105 transition-transform"
+            />
           </Link>
 
           {/* Nav links */}
