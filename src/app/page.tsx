@@ -17,6 +17,7 @@ export default function Home() {
   const [typedText, setTypedText] = useState('');
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [cursorTrail, setCursorTrail] = useState<{ x: number; y: number; id: number }[]>([]);
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
   const trailId = useRef(0);
 
   const phrases = ['birthdays', 'anniversaries', 'apologies', 'thank yous', 'just because'];
@@ -46,18 +47,25 @@ export default function Home() {
     return () => clearTimeout(timeout);
   }, [typedText, isDeleting, phraseIndex]);
 
-  // Cursor trail effect (desktop only)
+  // Cursor trail effect (desktop only, throttled)
   useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth <= 768) return;
+    
+    let lastTime = 0;
+    const throttleMs = 50; // Only update every 50ms
+    
     const handleMouseMove = (e: MouseEvent) => {
+      const now = Date.now();
+      if (now - lastTime < throttleMs) return;
+      lastTime = now;
+      
       setCursorPos({ x: e.clientX, y: e.clientY });
       trailId.current++;
-      setCursorTrail(prev => [...prev.slice(-12), { x: e.clientX, y: e.clientY, id: trailId.current }]);
+      setCursorTrail(prev => [...prev.slice(-6), { x: e.clientX, y: e.clientY, id: trailId.current }]);
     };
 
-    if (window.innerWidth > 768) {
-      window.addEventListener('mousemove', handleMouseMove);
-      return () => window.removeEventListener('mousemove', handleMouseMove);
-    }
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   // Fetch templates
@@ -69,6 +77,19 @@ export default function Home() {
         if (Array.isArray(data)) setTemplates(data.slice(0, 6));
       })
       .catch(() => {});
+
+    // Generate particles (fewer on mobile)
+    const isMobile = window.innerWidth < 768;
+    const particleCount = isMobile ? 10 : 25;
+    const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 2 + 1,
+      duration: Math.random() * 20 + 15,
+      delay: Math.random() * 5,
+    }));
+    setParticles(newParticles);
   }, []);
 
   // Scroll animation observer
@@ -114,24 +135,34 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Animated Background */}
+      {/* Animated Background - simplified on mobile */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Gradient Orbs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-accent-purple/20 rounded-full blur-[150px] animate-float" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-accent-pink/20 rounded-full blur-[150px] animate-float-delayed" />
-        <div className="absolute top-[30%] right-[10%] w-[400px] h-[400px] bg-accent-blue/10 rounded-full blur-[120px] animate-float-slow" />
+        {/* Gradient Orbs - smaller blur on mobile for performance */}
+        <div className="absolute top-[-20%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[80px] md:blur-[150px] md:animate-float" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[80px] md:blur-[150px] md:animate-float-delayed" />
+        <div className="hidden md:block absolute top-[30%] right-[10%] w-[400px] h-[400px] bg-accent-blue/10 rounded-full blur-[120px] animate-float-slow" />
         
-        {/* Floating 3D Elements */}
-        <div className="absolute top-[15%] left-[10%] text-5xl animate-float-element opacity-60">🎁</div>
-        <div className="absolute top-[25%] right-[15%] text-4xl animate-float-element-delayed opacity-50">💝</div>
-        <div className="absolute bottom-[30%] left-[8%] text-3xl animate-float-element-slow opacity-40">✨</div>
-        <div className="absolute top-[60%] right-[8%] text-4xl animate-float-element opacity-50">🎉</div>
-        <div className="absolute bottom-[20%] right-[25%] text-3xl animate-float-element-delayed opacity-40">💌</div>
-        <div className="absolute top-[45%] left-[20%] text-2xl animate-float-element-slow opacity-30">🌟</div>
+        {/* Floating Particles - hidden on mobile for performance */}
+        <div className="hidden md:block">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute rounded-full bg-white/30 animate-particle"
+              style={{
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                width: `${particle.size}px`,
+                height: `${particle.size}px`,
+                animationDuration: `${particle.duration}s`,
+                animationDelay: `${particle.delay}s`,
+              }}
+            />
+          ))}
+        </div>
         
-        {/* Grid Pattern */}
+        {/* Grid Pattern - hidden on mobile */}
         <div 
-          className="absolute inset-0 opacity-[0.02]"
+          className="hidden md:block absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: `linear-gradient(rgba(168,85,247,0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(168,85,247,0.3) 1px, transparent 1px)`,
@@ -246,45 +277,60 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
-            {templates.map((template, i) => (
-              <Link
-                key={template.id}
-                href={`/customize/${template.id}`}
-                className="scroll-animate opacity-0 translate-y-8 transition-all duration-500 group"
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <div className="glass rounded-2xl overflow-hidden hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-purple/10">
-                  {/* Thumbnail */}
-                  <div className="aspect-video bg-dark-800 relative overflow-hidden">
-                    {template.thumbnailUrl ? (
-                      <img
-                        src={template.thumbnailUrl}
-                        alt={template.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20" />
-                    )}
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                      <span className="text-white font-medium flex items-center gap-2">
-                        Customize Now
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </span>
+            {templates.length === 0 ? (
+              // Loading skeleton
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="scroll-animate opacity-0 translate-y-8 transition-all duration-500" style={{ transitionDelay: `${i * 100}ms` }}>
+                  <div className="glass rounded-2xl overflow-hidden">
+                    <div className="aspect-video bg-dark-800 animate-pulse" />
+                    <div className="p-4 md:p-5">
+                      <div className="h-5 bg-dark-700 rounded animate-pulse mb-2 w-3/4" />
+                      <div className="h-4 bg-dark-800 rounded animate-pulse w-full" />
                     </div>
                   </div>
-                  {/* Content */}
-                  <div className="p-4 md:p-5">
-                    <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-accent-purple transition-colors">
-                      {template.name}
-                    </h3>
-                    <p className="text-gray-500 text-sm line-clamp-2">{template.description}</p>
-                  </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            ) : (
+              templates.map((template, i) => (
+                <Link
+                  key={template.id}
+                  href={`/customize/${template.id}`}
+                  className="scroll-animate opacity-0 translate-y-8 transition-all duration-500 group"
+                  style={{ transitionDelay: `${i * 100}ms` }}
+                >
+                  <div className="glass rounded-2xl overflow-hidden hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-purple/10">
+                    {/* Thumbnail */}
+                    <div className="aspect-video bg-dark-800 relative overflow-hidden">
+                      {template.thumbnailUrl ? (
+                        <img
+                          src={template.thumbnailUrl}
+                          alt={template.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20" />
+                      )}
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                        <span className="text-white font-medium flex items-center gap-2">
+                          Customize Now
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                    {/* Content */}
+                    <div className="p-4 md:p-5">
+                      <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-accent-purple transition-colors">
+                        {template.name}
+                      </h3>
+                      <p className="text-gray-500 text-sm line-clamp-2">{template.description}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-10">
@@ -446,33 +492,46 @@ export default function Home() {
           50% { transform: translateY(-20px) scale(1.02); }
         }
 
-        @keyframes float-element {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(10deg); }
-        }
-
-        @keyframes float-element-delayed {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(-10deg); }
-        }
-
-        @keyframes float-element-slow {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(5deg); }
-        }
-
         @keyframes blink {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0; }
         }
 
+        @keyframes particle {
+          0%, 100% { 
+            transform: translateY(0) translateX(0);
+            opacity: 0.3;
+          }
+          25% {
+            transform: translateY(-30px) translateX(10px);
+            opacity: 0.6;
+          }
+          50% { 
+            transform: translateY(-50px) translateX(-10px);
+            opacity: 0.3;
+          }
+          75% {
+            transform: translateY(-30px) translateX(5px);
+            opacity: 0.5;
+          }
+        }
+
         .animate-float { animation: float 8s ease-in-out infinite; }
         .animate-float-delayed { animation: float-delayed 10s ease-in-out infinite; animation-delay: 2s; }
         .animate-float-slow { animation: float-slow 12s ease-in-out infinite; animation-delay: 4s; }
-        .animate-float-element { animation: float-element 6s ease-in-out infinite; }
-        .animate-float-element-delayed { animation: float-element-delayed 7s ease-in-out infinite; animation-delay: 1s; }
-        .animate-float-element-slow { animation: float-element-slow 8s ease-in-out infinite; animation-delay: 2s; }
         .animate-blink { animation: blink 1s step-end infinite; }
+        .animate-particle { animation: particle linear infinite; }
+
+        /* Reduce motion for users who prefer it */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-float,
+          .animate-float-delayed,
+          .animate-float-slow,
+          .animate-particle,
+          .animate-blink {
+            animation: none !important;
+          }
+        }
       `}</style>
     </div>
   );
