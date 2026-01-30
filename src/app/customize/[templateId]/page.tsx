@@ -82,12 +82,13 @@ function formatLabel(varName: string): string {
 }
 
 // Polaroid photo upload slot component
-function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaptionChange }: {
+// startUpload is passed from parent so only ONE useUploadThing instance exists
+function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaptionChange, startUpload }: {
   num: number; photoVal: string; captionVal: string;
   onPhotoChange: (url: string) => void; onCaptionChange: (val: string) => void;
+  startUpload: (files: File[]) => Promise<any[] | undefined>;
 }) {
   const [uploading, setUploading] = useState(false);
-  const { startUpload } = useUploadThing('imageUploader');
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,6 +175,9 @@ export default function CustomizePage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<Record<string, string>>({});
+
+  // Single shared upload handler for all polaroid photo slots
+  const { startUpload } = useUploadThing('imageUploader');
 
   // Custom URL addon state
   const [wantCustomUrl, setWantCustomUrl] = useState(false);
@@ -665,8 +669,9 @@ export default function CustomizePage() {
                             num={num}
                             photoVal={photoVal}
                             captionVal={captionVal}
-                            onPhotoChange={(url: string) => setFormData({ ...formData, [photoKey]: url })}
-                            onCaptionChange={(val: string) => setFormData({ ...formData, [captionKey]: val })}
+                            startUpload={startUpload}
+                            onPhotoChange={(url: string) => setFormData(prev => ({ ...prev, [photoKey]: url }))}
+                            onCaptionChange={(val: string) => setFormData(prev => ({ ...prev, [captionKey]: val }))}
                           />
                         );
                       })}
@@ -675,7 +680,7 @@ export default function CustomizePage() {
                     {!extraPhotosEnabled && (
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, enableExtraPhotos: 'true' })}
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraPhotos: 'true' }))}
                         className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
                       >
                         <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
