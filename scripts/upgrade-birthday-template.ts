@@ -74,8 +74,9 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
     /* Cake */
     .cake-container {
       position: relative;
-      width: 200px; height: 170px;
-      margin: .8rem auto;
+      width: 160px; height: 136px;
+      margin: .5rem auto;
+      transform: scale(.75);
     }
     .cake {
       position: absolute; bottom: 0;
@@ -218,6 +219,7 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
       100% { opacity:0; transform: scale(0) translateY(-30px); }
     }
 
+    @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
     .hidden { display: none !important; }
 
     @media (max-width: 480px) {
@@ -232,7 +234,7 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
   <div class="content">
     <div class="card">
       <h1>Happy Birthday <span class="emoji">🎂</span><br>{{recipientName}}!</h1>
-      <p class="message">{{customMessage}}</p>
+      <p class="message" id="customMsg" style="display:none;">{{customMessage}}</p>
 
       <div class="cake-container">
         <div class="candles" id="candles">
@@ -548,6 +550,10 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
       if (bs) bs.style.display = 'none';
       document.getElementById('tap-hint').style.display = 'none';
       document.getElementById('result').classList.add('visible');
+
+      // Reveal the custom message
+      var msg = document.getElementById('customMsg');
+      if (msg) { msg.style.display = 'block'; msg.style.animation = 'fadeIn .6s ease-out'; }
 
       // Confetti
       if (hasConfetti) spawnConfetti();
