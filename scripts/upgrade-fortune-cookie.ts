@@ -2,6 +2,8 @@ import { db } from '../src/lib/db';
 import { templates } from '../src/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+const COOKIE_SVG = `<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg"><g id="color"><rect x="17.3962" y="28.2404" width="8.5369" height="17.1843" transform="matrix(0.5359, -0.8443, 0.8443, 0.5359, -21.0425, 35.3858)" fill="#d0cfce"/><path fill="#fcea2b" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055A43.3575,43.3575,0,0,0,33,37"/><path fill="#f1b31c" d="M49.8957,20.9907a19.2835,19.2835,0,0,0-12.2606-2.9385,19.1877,19.1877,0,0,1,8.5782,2.9385,19.3518,19.3518,0,0,1-8.668,35.6183,19.3707,19.3707,0,0,0,12.35-35.6183Z"/></g><g id="line"><path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055C26.1318,33.6782,34,37,34,37"/><polyline fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="17.847 38.124 12.73 34.876 16.116 29.541 24.294 34.732"/></g></svg>`;
+
 const upgradedFortuneCookie = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,31 +76,73 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       50% { background-position:100% 50%; }
     }
 
-    /* Cookie button */
-    .cookie-btn {
-      background: none; border: none; padding: 0;
-      cursor: pointer; outline: none;
-      display: block;
+    /* Cookie wrapper - holds both halves */
+    .cookie-wrap {
+      position: relative;
+      width: clamp(140px, 40vw, 200px);
+      height: clamp(140px, 40vw, 200px);
       margin: 0 auto 1rem;
-      transition: transform .3s;
+      cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    .cookie-btn:hover { transform: translateY(-8px); }
-    .cookie-btn:active { transform: scale(.93); }
-    .cookie-btn.cracked {
-      cursor: default; pointer-events: none;
-      animation: cookieCrack .6s ease-out forwards;
-    }
-    @keyframes cookieCrack {
-      0% { transform: scale(1); opacity:1; }
-      20% { transform: scale(1.1) rotate(-5deg); }
-      50% { transform: scale(.9) rotate(4deg); opacity:.7; }
-      100% { transform: scale(.6) rotate(0); opacity:0; }
-    }
-    .cookie-btn svg {
-      width: clamp(140px, 40vw, 200px);
-      height: auto;
+
+    /* Whole cookie (shown before crack) */
+    .cookie-whole {
+      width: 100%; height: 100%;
       filter: drop-shadow(0 12px 30px rgba(196,144,62,.4));
+      transition: transform .3s;
+    }
+    .cookie-wrap:hover .cookie-whole { transform: translateY(-8px); }
+    .cookie-wrap:active .cookie-whole { transform: scale(.93); }
+
+    /* Shake before splitting */
+    .cookie-wrap.shaking .cookie-whole {
+      animation: shake .4s ease-in-out;
+    }
+    @keyframes shake {
+      0% { transform: rotate(0); }
+      15% { transform: rotate(-12deg); }
+      30% { transform: rotate(10deg); }
+      45% { transform: rotate(-8deg); }
+      60% { transform: rotate(6deg); }
+      75% { transform: rotate(-3deg); }
+      100% { transform: rotate(0); }
+    }
+
+    /* After shake, whole hides, halves show */
+    .cookie-whole.hide { display: none; }
+
+    /* Two halves of the cookie */
+    .cookie-half {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      filter: drop-shadow(0 8px 20px rgba(196,144,62,.3));
+      display: none;
+    }
+    .cookie-half svg { width: 100%; height: 100%; }
+    .cookie-half.show { display: block; }
+
+    .cookie-top {
+      clip-path: polygon(0 0, 100% 0, 100% 52%, 0 52%);
+    }
+    .cookie-bottom {
+      clip-path: polygon(0 48%, 100% 48%, 100% 100%, 0 100%);
+    }
+
+    .cookie-top.fly {
+      animation: flyTop .7s ease-out forwards;
+    }
+    .cookie-bottom.fly {
+      animation: flyBottom .7s ease-out forwards;
+    }
+    @keyframes flyTop {
+      0% { transform: translate(0,0) rotate(0); opacity:1; }
+      100% { transform: translate(-40px, -60px) rotate(-25deg); opacity:0; }
+    }
+    @keyframes flyBottom {
+      0% { transform: translate(0,0) rotate(0); opacity:1; }
+      100% { transform: translate(40px, 50px) rotate(20deg); opacity:0; }
     }
 
     /* Hint */
@@ -139,14 +183,12 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       overflow: hidden;
       box-shadow: 0 10px 40px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.2);
     }
-    /* Paper lines */
     .fortune-inner::before {
       content:'';
       position: absolute; inset:0;
       background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,0,0,.03) 28px,rgba(0,0,0,.03) 29px);
       pointer-events: none;
     }
-    /* Red top accent */
     .fortune-inner::after {
       content:'';
       position: absolute; top:0; left:0; right:0;
@@ -216,19 +258,20 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       <h1 class="name">{{recipientName}}</h1>
     </div>
 
-    <button class="cookie-btn" id="cookie" onclick="crack()" aria-label="Crack the cookie">
-      <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-        <g id="color">
-          <rect x="17.3962" y="28.2404" width="8.5369" height="17.1843" transform="matrix(0.5359, -0.8443, 0.8443, 0.5359, -21.0425, 35.3858)" fill="#d0cfce"/>
-          <path fill="#fcea2b" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055A43.3575,43.3575,0,0,0,33,37"/>
-          <path fill="#f1b31c" d="M49.8957,20.9907a19.2835,19.2835,0,0,0-12.2606-2.9385,19.1877,19.1877,0,0,1,8.5782,2.9385,19.3518,19.3518,0,0,1-8.668,35.6183,19.3707,19.3707,0,0,0,12.35-35.6183Z"/>
-        </g>
-        <g id="line">
-          <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055C26.1318,33.6782,34,37,34,37"/>
-          <polyline fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="17.847 38.124 12.73 34.876 16.116 29.541 24.294 34.732"/>
-        </g>
-      </svg>
-    </button>
+    <div class="cookie-wrap" id="cookieWrap" onclick="crack()">
+      <!-- Whole cookie before crack -->
+      <div class="cookie-whole" id="cookieWhole">
+        ${COOKIE_SVG}
+      </div>
+      <!-- Top half (shown during crack) -->
+      <div class="cookie-half cookie-top" id="cookieTop">
+        ${COOKIE_SVG}
+      </div>
+      <!-- Bottom half (shown during crack) -->
+      <div class="cookie-half cookie-bottom" id="cookieBot">
+        ${COOKIE_SVG}
+      </div>
+    </div>
 
     <p class="hint" id="hint">
       <span class="hint-tap">&#9757;</span> Tap to crack open
@@ -256,13 +299,12 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
     var hasSparkles = '{{enableSparkles}}' === 'true';
     var hasHaptics = 'vibrate' in navigator;
 
-    // Sparkles around cookie before cracking
     if (hasSparkles) {
       setInterval(function() {
         if (done) return;
-        var btn = document.getElementById('cookie');
-        if (!btn) return;
-        var r = btn.getBoundingClientRect();
+        var el = document.getElementById('cookieWrap');
+        if (!el) return;
+        var r = el.getBoundingClientRect();
         var s = document.createElement('div');
         s.className = 'spark';
         s.style.left = (r.left + Math.random() * r.width) + 'px';
@@ -281,45 +323,64 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
 
       if (hasHaptics) navigator.vibrate([30,30,60]);
 
-      document.getElementById('cookie').classList.add('cracked');
+      var wrap = document.getElementById('cookieWrap');
+      wrap.style.cursor = 'default';
 
-      // Crumbs
-      var btn = document.getElementById('cookie');
-      var r = btn.getBoundingClientRect();
-      var cx = r.left + r.width/2, cy = r.top + r.height/2;
-      for (var i = 0; i < 20; i++) {
-        var c = document.createElement('div');
-        c.className = 'crumb';
-        var sz = 3 + Math.random()*8;
-        c.style.width = sz+'px'; c.style.height = sz+'px';
-        c.style.left = (cx + (Math.random()-.5)*60) + 'px';
-        c.style.top = cy + 'px';
-        c.style.setProperty('--tx', (Math.random()-.5)*180+'px');
-        c.style.setProperty('--ty', (30+Math.random()*120)+'px');
-        c.style.animation = 'crumbFly '+(0.4+Math.random()*0.6)+'s ease-out forwards';
-        c.style.background = ['#c4903e','#d4a056','#a07030','#e8c373'][Math.floor(Math.random()*4)];
-        document.body.appendChild(c);
-        setTimeout(function(el) { el.remove(); }, 1200, c);
-      }
+      // Step 1: Shake
+      wrap.classList.add('shaking');
 
-      document.getElementById('hint').style.opacity = '0';
-
+      // Step 2: After shake, split into halves
       setTimeout(function() {
-        document.getElementById('fortune').classList.add('show');
+        // Hide whole, show halves
+        document.getElementById('cookieWhole').classList.add('hide');
+        document.getElementById('cookieTop').classList.add('show');
+        document.getElementById('cookieBot').classList.add('show');
 
-        if (hasLucky) {
-          var nums = [];
-          while (nums.length < 6) {
-            var n = Math.floor(Math.random()*49)+1;
-            if (nums.indexOf(n) === -1) nums.push(n);
-          }
-          nums.sort(function(a,b){return a-b;});
-          document.getElementById('lucky-nums').textContent = nums.join('  ');
-          document.getElementById('lucky').classList.add('show');
+        // Spawn crumbs from center
+        var r = wrap.getBoundingClientRect();
+        var cx = r.left + r.width/2, cy = r.top + r.height/2;
+        for (var i = 0; i < 20; i++) {
+          var c = document.createElement('div');
+          c.className = 'crumb';
+          var sz = 3 + Math.random()*8;
+          c.style.width = sz+'px'; c.style.height = sz+'px';
+          c.style.left = (cx + (Math.random()-.5)*60) + 'px';
+          c.style.top = (cy + (Math.random()-.5)*30) + 'px';
+          c.style.setProperty('--tx', (Math.random()-.5)*200+'px');
+          c.style.setProperty('--ty', (20+Math.random()*140)+'px');
+          c.style.animation = 'crumbFly '+(0.4+Math.random()*0.6)+'s ease-out forwards';
+          c.style.background = ['#c4903e','#d4a056','#a07030','#e8c373','#fcea2b'][Math.floor(Math.random()*5)];
+          document.body.appendChild(c);
+          setTimeout(function(el) { el.remove(); }, 1200, c);
         }
 
-        if (hasConfetti) launchConfetti();
-      }, 600);
+        // Fly halves apart
+        setTimeout(function() {
+          document.getElementById('cookieTop').classList.add('fly');
+          document.getElementById('cookieBot').classList.add('fly');
+        }, 50);
+
+        // Hide hint
+        document.getElementById('hint').style.opacity = '0';
+
+        // Show fortune
+        setTimeout(function() {
+          document.getElementById('fortune').classList.add('show');
+
+          if (hasLucky) {
+            var nums = [];
+            while (nums.length < 6) {
+              var n = Math.floor(Math.random()*49)+1;
+              if (nums.indexOf(n) === -1) nums.push(n);
+            }
+            nums.sort(function(a,b){return a-b;});
+            document.getElementById('lucky-nums').textContent = nums.join('  ');
+            document.getElementById('lucky').classList.add('show');
+          }
+
+          if (hasConfetti) launchConfetti();
+        }, 600);
+      }, 450); // after shake finishes
     }
 
     function launchConfetti() {
@@ -358,7 +419,7 @@ async function main() {
       .update(templates)
       .set({
         htmlTemplate: upgradedFortuneCookie,
-        description: 'Crack open a fortune cookie to reveal a personalized message. Features crumbs, lucky numbers, sparkles, and confetti addons!',
+        description: 'Crack open a fortune cookie to reveal a personalized message. Shake, split, and crumbs fly! Features lucky numbers, sparkles, and confetti addons.',
       })
       .where(eq(templates.name, 'Fortune Cookie'));
     console.log('Updated Fortune Cookie template');
