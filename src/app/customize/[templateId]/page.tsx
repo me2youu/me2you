@@ -39,10 +39,12 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableExtraPhotos: { label: 'Extra Photos', description: 'Add up to 6 more photos ($0.50 each)', icon: '📸' },
   enableExtraSongs: { label: 'Extra Songs', description: 'Add up to 3 more songs to your top 5 ($0.50 each)', icon: '🎵' },
   enableExtraMoments: { label: 'Extra Moments', description: 'Add up to 3 more moments to your top 5 ($0.50 each)', icon: '✨' },
+  enableExtraEpisodes: { label: 'Extra Episodes', description: 'Add 2 more episodes to your show ($0.50 each filled)', icon: '🎬' },
+  enableExtraTopThings: { label: 'Extra Top Things', description: 'Add 2 more items to your Top Things list ($0.50 each filled)', icon: '🏆' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
-const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs', 'enableExtraMoments']);
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs', 'enableExtraMoments', 'enableExtraEpisodes', 'enableExtraTopThings']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
@@ -51,6 +53,8 @@ const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraPhotos: ['polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8'],
   enableExtraSongs: ['wrappedSong3','wrappedArtist3','wrappedSong4','wrappedArtist4','wrappedSong5','wrappedArtist5'],
   enableExtraMoments: ['wrappedMoment3','wrappedMoment4','wrappedMoment5'],
+  enableExtraEpisodes: ['episode2Title','episode2Date','episode2Desc','episode3Title','episode3Date','episode3Desc'],
+  enableExtraTopThings: ['top4','top5'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
@@ -63,6 +67,11 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'wrappedArtist1','wrappedArtist2','wrappedArtist3','wrappedArtist4','wrappedArtist5',
   'wrappedMoment1','wrappedMoment2','wrappedMoment3','wrappedMoment4','wrappedMoment5',
   'wrappedTheme',
+  'episode1Title','episode1Date','episode1Desc',
+  'episode2Title','episode2Date','episode2Desc',
+  'episode3Title','episode3Date','episode3Desc',
+  'top1','top2','top3','top4','top5',
+  'heroImageUrl',
 ]);
 
 // Smart field type detection based on variable name
@@ -185,8 +194,9 @@ export default function CustomizePage() {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  // Single shared upload handler for all polaroid photo slots
+  // Single shared upload handler for all polaroid photo slots and hero image
   const { startUpload } = useUploadThing('imageUploader');
+  const [heroUploading, setHeroUploading] = useState(false);
 
   // Custom URL addon state
   const [wantCustomUrl, setWantCustomUrl] = useState(false);
@@ -347,7 +357,17 @@ export default function CustomizePage() {
     ? [3,4,5].filter(n => (formData[`wrappedMoment${n}`] || '').trim() !== '').length
     : 0;
   const extraMomentsPrice = filledExtraMomentsCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice;
+  // Per-episode pricing: episodes 2-3 cost $0.50 each when extra episodes addon is on
+  const filledExtraEpisodesCount = formData.enableExtraEpisodes === 'true'
+    ? [2,3].filter(n => (formData[`episode${n}Title`] || '').trim() !== '').length
+    : 0;
+  const extraEpisodesPrice = filledExtraEpisodesCount * ADDON_PRICE;
+  // Per-top-thing pricing: top 4-5 cost $0.50 each when extra top things addon is on
+  const filledExtraTopThingsCount = formData.enableExtraTopThings === 'true'
+    ? [4,5].filter(n => (formData[`top${n}`] || '').trim() !== '').length
+    : 0;
+  const extraTopThingsPrice = filledExtraTopThingsCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -407,6 +427,24 @@ export default function CustomizePage() {
         });
       }
 
+      // Add per-episode pricing for extra episodes (2-3)
+      if (formData.enableExtraEpisodes === 'true') {
+        [2,3].forEach(n => {
+          if ((formData[`episode${n}Title`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraEpisode${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
+
+      // Add per-top-thing pricing for extra top things (4-5)
+      if (formData.enableExtraTopThings === 'true') {
+        [4,5].forEach(n => {
+          if ((formData[`top${n}`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraTopThing${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
+
       // 1. Create the gift
       const response = await fetch('/api/gifts', {
         method: 'POST',
@@ -447,7 +485,9 @@ export default function CustomizePage() {
 
     switch (variable.type) {
       case 'textarea': {
-        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 75;
+        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500
+          : variable.name.includes('Description') || variable.name.includes('Desc') ? 200
+          : 75;
         return (
           <div>
             <textarea
@@ -517,7 +557,8 @@ export default function CustomizePage() {
           />
         );
 
-      default:
+      default: {
+        const textMax = variable.name.includes('Title') || variable.name.includes('title') ? 40 : 80;
         return (
           <input
             type="text"
@@ -526,9 +567,10 @@ export default function CustomizePage() {
             className={baseClass}
             placeholder={variable.placeholder || `Enter ${variable.label.toLowerCase()}...`}
             required={variable.required}
-            maxLength={80}
+            maxLength={textMax}
           />
         );
+      }
     }
   };
 
@@ -847,6 +889,206 @@ export default function CustomizePage() {
                 );
               })()}
 
+              {/* Hero Image Upload - shown for templates with heroImageUrl field */}
+              {templateVariables.some(v => v.name === 'heroImageUrl') && (() => {
+                const heroVal = formData.heroImageUrl || '';
+                const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setHeroUploading(true);
+                  try {
+                    const res = await startUpload([file]);
+                    const url = (res?.[0] as any)?.ufsUrl || res?.[0]?.url;
+                    if (url) setFormData(prev => ({ ...prev, heroImageUrl: url }));
+                  } catch (err) { console.error('Hero upload failed:', err); }
+                  finally { setHeroUploading(false); }
+                };
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <h4 className="text-white font-semibold text-sm mb-2">Hero Banner Image</h4>
+                    <p className="text-gray-600 text-xs mb-3">Upload a photo for the hero background (landscape works best)</p>
+                    <div className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                      {heroVal ? (
+                        <div className="relative group">
+                          <img src={heroVal} alt="Hero" className="w-full h-32 object-cover rounded-md" />
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, heroImageUrl: '' }))}
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm rounded-md"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="w-full h-24 flex flex-col items-center justify-center cursor-pointer rounded-md border border-dashed border-white/10 hover:border-accent-purple/30 hover:bg-dark-800 transition-all">
+                          {heroUploading ? (
+                            <div className="w-6 h-6 border-2 border-accent-purple border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <svg className="w-6 h-6 text-gray-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              <span className="text-xs text-gray-500">Click to upload</span>
+                            </>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} disabled={heroUploading} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Episode Editor - shown for templates with episode fields */}
+              {templateVariables.some(v => v.name === 'episode1Title') && (() => {
+                const extraEpisodesEnabled = formData.enableExtraEpisodes === 'true';
+                const maxEpisodes = extraEpisodesEnabled ? 3 : 1;
+                const filledExtra = extraEpisodesEnabled
+                  ? [2,3].filter(n => (formData[`episode${n}Title`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Episodes</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraEpisodesEnabled ? 'Up to 3 episodes' : '1 episode included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Each episode is a memory — give it a title, date, and description</p>
+                    <div className="space-y-3">
+                      {Array.from({ length: maxEpisodes }, (_, i) => i + 1).map(num => {
+                        const titleKey = `episode${num}Title`;
+                        const dateKey = `episode${num}Date`;
+                        const descKey = `episode${num}Desc`;
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-red-500">E{num}</span>
+                              <span className="text-[10px] text-gray-600">
+                                {num === 1 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={formData[titleKey] || ''}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [titleKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5"
+                              placeholder="Episode title (e.g. The First Date)"
+                              maxLength={50}
+                            />
+                            {(formData[titleKey] || '').length > 0 && (
+                              <p className={`text-[10px] mb-1 text-right ${(formData[titleKey] || '').length >= 45 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {(formData[titleKey] || '').length}/50
+                              </p>
+                            )}
+                            <input
+                              type="text"
+                              value={formData[dateKey] || ''}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [dateKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5"
+                              placeholder="Date (e.g. Jan 2024)"
+                              maxLength={30}
+                            />
+                            <textarea
+                              value={formData[descKey] || ''}
+                              onChange={(e) => { if (e.target.value.length <= 200) setFormData(prev => ({ ...prev, [descKey]: e.target.value })); }}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
+                              rows={2}
+                              placeholder="What happened? (shown when clicked)"
+                              maxLength={200}
+                            />
+                            {(formData[descKey] || '').length > 0 && (
+                              <p className={`text-[10px] mt-0.5 text-right ${(formData[descKey] || '').length >= 180 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {(formData[descKey] || '').length}/200
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {!extraEpisodesEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraEpisodes: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Episodes</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
+                    {extraEpisodesEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra episode{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Top Things Editor - shown for templates with top1 field */}
+              {templateVariables.some(v => v.name === 'top1') && (() => {
+                const extraTopThingsEnabled = formData.enableExtraTopThings === 'true';
+                const maxItems = extraTopThingsEnabled ? 5 : 3;
+                const filledExtra = extraTopThingsEnabled
+                  ? [4,5].filter(n => (formData[`top${n}`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Top Things</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraTopThingsEnabled ? 'Up to 5 items' : '3 items included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Top things about the recipient (shown in a ranked list)</p>
+                    <div className="space-y-2">
+                      {Array.from({ length: maxItems }, (_, i) => i + 1).map(num => {
+                        const key = `top${num}`;
+                        const val = formData[key] || '';
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold w-5 shrink-0 text-red-500">#{num}</span>
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={(e) => setFormData(prev => ({ ...prev, [key]: e.target.value }))}
+                                className="flex-1 px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                                placeholder={num === 1 ? 'e.g. Your infectious laugh' : 'Another great thing...'}
+                                maxLength={60}
+                              />
+                              <span className="text-[10px] text-gray-600 shrink-0">
+                                {num <= 3 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
+                            {val.length > 0 && (
+                              <p className={`text-[10px] mt-0.5 text-right ${val.length >= 55 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {val.length}/60
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {!extraTopThingsEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraTopThings: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Top Things</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
+                    {extraTopThingsEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra item{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Wrapped Moments Editor - shown for templates with wrappedMoment fields */}
               {templateVariables.some(v => v.name === 'wrappedMoment1') && (() => {
                 const extraMomentsEnabled = formData.enableExtraMoments === 'true';
@@ -1046,7 +1288,7 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0 || extraEpisodesPrice > 0 || extraTopThingsPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
@@ -1054,6 +1296,8 @@ export default function CustomizePage() {
                         filledExtraPhotosCount > 0 ? `${filledExtraPhotosCount} extra photo${filledExtraPhotosCount > 1 ? 's' : ''}` : '',
                         filledExtraSongsCount > 0 ? `${filledExtraSongsCount} extra song${filledExtraSongsCount > 1 ? 's' : ''}` : '',
                         filledExtraMomentsCount > 0 ? `${filledExtraMomentsCount} extra moment${filledExtraMomentsCount > 1 ? 's' : ''}` : '',
+                        filledExtraEpisodesCount > 0 ? `${filledExtraEpisodesCount} extra episode${filledExtraEpisodesCount > 1 ? 's' : ''}` : '',
+                        filledExtraTopThingsCount > 0 ? `${filledExtraTopThingsCount} extra top thing${filledExtraTopThingsCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>

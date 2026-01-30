@@ -21,6 +21,7 @@ const RAW_FIELDS = new Set([
   'imageUrl', 'thumbnailUrl', 'audioUrl', 'videoUrl',
   'memeImageUrls', 'memeSlide1', 'memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5',
   'polaroidPhoto1','polaroidPhoto2','polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8',
+  'heroImageUrl',
   // Add any template fields that intentionally hold HTML or URLs
 ]);
 
