@@ -80,132 +80,127 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       50% { background-position: 100% 50%; }
     }
 
-    /* Cookie container */
+    /* Cookie scene */
     .cookie-scene {
       position: relative;
-      width: 220px;
-      height: 150px;
+      width: 200px;
+      height: 160px;
       margin: 0 auto 1.5rem;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    .cookie-scene.cracked { cursor: default; }
+    .cookie-scene.cracked { cursor: default; pointer-events: none; }
 
-    /* CSS Fortune Cookie */
-    .cookie-half {
+    /* Fortune cookie - the classic folded shape */
+    .cookie {
       position: absolute;
-      width: 110px;
-      height: 130px;
-      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px;
+      height: 100px;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .cookie-left {
-      left: 5px;
-      top: 10px;
-    }
-    .cookie-right {
-      right: 5px;
-      top: 10px;
+    .cookie-scene:not(.cracked) .cookie:active {
+      transform: translate(-50%, -50%) scale(0.93);
     }
 
-    /* Cookie shape using CSS */
-    .cookie-body {
+    /* Main cookie body - rounded triangle / folded disc */
+    .cookie-top, .cookie-bottom {
+      position: absolute;
+      left: 0;
       width: 100%;
-      height: 100%;
-      position: relative;
+      height: 55%;
+      overflow: hidden;
+      transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .cookie-body::before {
+    .cookie-top { top: 0; transform-origin: center bottom; }
+    .cookie-bottom { bottom: 0; transform-origin: center top; }
+
+    .cookie-top::before, .cookie-bottom::before {
       content: '';
       position: absolute;
+      left: 0;
       width: 100%;
-      height: 80%;
-      top: 10%;
+      height: 200%;
       border-radius: 50%;
-      background: linear-gradient(145deg, #e8c373, #c4903e, #a07030);
+      background: linear-gradient(160deg, #f0d48a 0%, #dbb45c 30%, #c49a3c 60%, #a07830 100%);
       box-shadow:
-        inset 0 -8px 15px rgba(0,0,0,0.2),
-        inset 0 4px 8px rgba(255,220,130,0.3),
-        0 8px 25px rgba(196, 144, 62, 0.3);
+        inset 0 2px 15px rgba(255, 230, 150, 0.4),
+        inset 0 -4px 10px rgba(0,0,0,0.15);
     }
-    .cookie-left .cookie-body::before {
-      border-radius: 50% 10% 10% 50%;
-    }
-    .cookie-right .cookie-body::before {
-      border-radius: 10% 50% 50% 10%;
-    }
-    /* Cookie texture lines */
-    .cookie-body::after {
+    .cookie-top::before { bottom: 0; }
+    .cookie-bottom::before { top: 0; }
+
+    /* Subtle texture on cookie */
+    .cookie-top::after, .cookie-bottom::after {
       content: '';
       position: absolute;
-      width: 60%;
-      height: 40%;
-      top: 35%;
-      left: 20%;
+      left: 10%;
+      width: 80%;
+      height: 200%;
       border-radius: 50%;
-      background: repeating-linear-gradient(
-        135deg,
-        transparent,
-        transparent 3px,
-        rgba(0,0,0,0.06) 3px,
-        rgba(0,0,0,0.06) 4px
+      background: repeating-conic-gradient(
+        rgba(0,0,0,0.02) 0deg, transparent 3deg, transparent 6deg
       );
     }
+    .cookie-top::after { bottom: 0; }
+    .cookie-bottom::after { top: 0; }
 
-    /* Whole cookie (before crack) */
-    .cookie-whole {
+    /* Fold line / seam in the middle */
+    .cookie-seam {
       position: absolute;
-      inset: 0;
+      top: 50%;
+      left: 5%;
+      width: 90%;
+      height: 3px;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.12) 20%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.12) 80%, transparent 100%);
+      border-radius: 50%;
+      z-index: 2;
       transition: opacity 0.3s;
     }
-    .cookie-whole-body {
-      width: 180px;
-      height: 110px;
-      margin: 20px auto 0;
-      background: linear-gradient(145deg, #e8c373, #c4903e, #a07030);
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      position: relative;
-      box-shadow:
-        inset 0 -8px 15px rgba(0,0,0,0.2),
-        inset 0 4px 8px rgba(255,220,130,0.3),
-        0 12px 35px rgba(196, 144, 62, 0.3);
-      transition: transform 0.2s;
-    }
-    .cookie-scene:not(.cracked) .cookie-whole-body:active {
-      transform: scale(0.95);
-    }
-    /* Fold line */
-    .cookie-whole-body::after {
-      content: '';
+
+    /* Highlight / sheen */
+    .cookie-sheen {
       position: absolute;
-      top: 48%;
-      left: 8%;
-      width: 84%;
-      height: 2px;
-      background: rgba(0,0,0,0.12);
+      top: 18%;
+      left: 25%;
+      width: 35%;
+      height: 20%;
+      background: rgba(255, 240, 180, 0.25);
       border-radius: 50%;
-    }
-    /* Highlight */
-    .cookie-whole-body::before {
-      content: '';
-      position: absolute;
-      top: 15%;
-      left: 20%;
-      width: 40%;
-      height: 25%;
-      background: rgba(255,220,130,0.2);
-      border-radius: 50%;
-      filter: blur(6px);
+      filter: blur(8px);
+      z-index: 2;
+      pointer-events: none;
+      transition: opacity 0.3s;
     }
 
-    /* Cracked state */
-    .cracked .cookie-whole { opacity: 0; }
-    .cracked .cookie-left {
-      transform: translateX(-40px) rotate(-25deg);
-      opacity: 0.7;
+    /* Cookie shadow on surface */
+    .cookie-shadow {
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 20px;
+      background: radial-gradient(ellipse, rgba(196, 144, 62, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+      transition: all 0.6s;
     }
-    .cracked .cookie-right {
-      transform: translateX(40px) rotate(25deg);
-      opacity: 0.7;
+
+    /* Cracked state - top half tilts up, bottom tilts down */
+    .cracked .cookie-top {
+      transform: rotateX(-70deg) translateY(-20px);
+      opacity: 0.6;
     }
+    .cracked .cookie-bottom {
+      transform: rotateX(70deg) translateY(20px);
+      opacity: 0.6;
+    }
+    .cracked .cookie-seam { opacity: 0; }
+    .cracked .cookie-sheen { opacity: 0; }
+    .cracked .cookie-shadow { opacity: 0; width: 80px; }
 
     /* Hint text */
     .hint {
@@ -365,17 +360,13 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
     </div>
 
     <div class="cookie-scene" id="cookie-scene" onclick="crackCookie()">
-      <!-- Whole cookie (shown first) -->
-      <div class="cookie-whole" id="cookie-whole">
-        <div class="cookie-whole-body"></div>
+      <div class="cookie">
+        <div class="cookie-top"></div>
+        <div class="cookie-seam"></div>
+        <div class="cookie-bottom"></div>
+        <div class="cookie-sheen"></div>
       </div>
-      <!-- Two halves (shown after crack) -->
-      <div class="cookie-half cookie-left">
-        <div class="cookie-body"></div>
-      </div>
-      <div class="cookie-half cookie-right">
-        <div class="cookie-body"></div>
-      </div>
+      <div class="cookie-shadow"></div>
     </div>
 
     <p class="hint" id="hint">
