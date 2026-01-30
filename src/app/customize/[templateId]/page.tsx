@@ -59,6 +59,7 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'polaroidCaption1','polaroidCaption2','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8',
   'wrappedSong1','wrappedSong2','wrappedSong3','wrappedSong4','wrappedSong5',
   'wrappedArtist1','wrappedArtist2','wrappedArtist3','wrappedArtist4','wrappedArtist5',
+  'wrappedTheme',
 ]);
 
 // Smart field type detection based on variable name
@@ -210,7 +211,9 @@ export default function CustomizePage() {
       const vars = extractVariables(data.htmlTemplate);
       const initialData: Record<string, string> = {};
       vars.forEach(v => {
-        initialData[v.name] = '';
+        // Set sensible defaults for specific fields
+        if (v.name === 'wrappedTheme') initialData[v.name] = 'friendship';
+        else initialData[v.name] = '';
       });
       setFormData(initialData);
     } catch (err: any) {
@@ -722,8 +725,41 @@ export default function CustomizePage() {
                 const filledExtra = extraSongsEnabled
                   ? [3,4,5].filter(n => (formData[`wrappedSong${n}`] || '').trim() !== '').length
                   : 0;
+                const currentTheme = formData.wrappedTheme || 'friendship';
                 return (
                   <div className="border-t border-white/5 pt-4 mt-4">
+                    {/* Theme Selector */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, wrappedTheme: 'friendship' }))}
+                          className={`p-3 rounded-xl border transition-all text-left ${
+                            currentTheme === 'friendship'
+                              ? 'bg-green-500/10 border-green-500/40'
+                              : 'bg-dark-800/50 border-white/5 hover:border-white/10'
+                          }`}
+                        >
+                          <span className="text-lg block mb-1">🤝</span>
+                          <span className="text-white text-xs font-semibold">Friendship</span>
+                          <span className="text-gray-500 text-[10px] block">Green vibes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, wrappedTheme: 'love' }))}
+                          className={`p-3 rounded-xl border transition-all text-left ${
+                            currentTheme === 'love'
+                              ? 'bg-pink-500/10 border-pink-500/40'
+                              : 'bg-dark-800/50 border-white/5 hover:border-white/10'
+                          }`}
+                        >
+                          <span className="text-lg block mb-1">💕</span>
+                          <span className="text-white text-xs font-semibold">Love</span>
+                          <span className="text-gray-500 text-[10px] block">Pink & romantic</span>
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-semibold text-sm">Top Songs</h4>
                       <span className="text-xs text-gray-500">
