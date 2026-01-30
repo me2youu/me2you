@@ -34,6 +34,7 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableFireflies: { label: 'Fireflies', description: 'Warm glowing fireflies float across the night sky', icon: '🪲' },
   enableExtraBottles: { label: 'Extra Bottles', description: 'Two more bottles wash ashore, each with its own message', icon: '🍾' },
   enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides ($0.50 each filled)', icon: '🖼️' },
+  enableMicBlow: { label: 'Mic Blow', description: 'Blow into the microphone to extinguish candles!', icon: '🎤' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)

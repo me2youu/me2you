@@ -1,6 +1,3 @@
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-
 import { db } from '../src/lib/db';
 import { templates } from '../src/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -9,422 +6,257 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Happy Birthday {{recipientName}}!</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       overflow: hidden;
       touch-action: none;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+      background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 40%, #24243e 100%);
     }
 
     /* Physics Canvas */
     #physics-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
       z-index: 0;
     }
 
     /* Content Overlay */
     .content {
-      position: relative;
-      z-index: 10;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 2rem 1rem;
+      position: relative; z-index: 10;
+      min-height: 100vh; min-height: 100dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 1.5rem 1rem;
       pointer-events: none;
     }
 
     /* Glass Card */
     .card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 24px;
-      padding: 2rem;
-      max-width: 400px;
-      width: 100%;
+      padding: 1.8rem 1.5rem;
+      max-width: 380px; width: 100%;
       text-align: center;
       pointer-events: auto;
-      margin-bottom: 1rem;
     }
 
     h1 {
       color: #fff;
-      font-size: 1.6rem;
+      font-size: clamp(1.3rem, 5vw, 1.7rem);
       font-weight: 700;
-      margin-bottom: 0.5rem;
-      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: .4rem;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
     }
-
     h1 .emoji {
       display: inline-block;
-      animation: wiggle 0.5s ease-in-out infinite;
+      animation: wiggle .5s ease-in-out infinite;
     }
-
-    @keyframes wiggle {
-      0%, 100% { transform: rotate(-5deg); }
-      50% { transform: rotate(5deg); }
-    }
+    @keyframes wiggle { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 
     .message {
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 1rem;
+      color: rgba(255,255,255,0.8);
+      font-size: clamp(.85rem, 3.5vw, 1rem);
       line-height: 1.6;
       margin-bottom: 1rem;
     }
 
-    /* Cake Container */
+    /* Cake */
     .cake-container {
       position: relative;
-      width: 200px;
-      height: 180px;
-      margin: 1rem auto;
+      width: 200px; height: 170px;
+      margin: .8rem auto;
     }
-
-    /* Cake */
     .cake {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
+      position: absolute; bottom: 0;
+      left: 50%; transform: translateX(-50%);
     }
+    .cake-layer { border-radius: 10px; margin: 0 auto; }
+    .cake-layer-1 { width: 160px; height: 48px; background: linear-gradient(135deg, #f5a9bc, #f48fb1); border-bottom: 4px solid #ec407a; }
+    .cake-layer-2 { width: 130px; height: 38px; background: linear-gradient(135deg, #ce93d8, #ba68c8); border-bottom: 4px solid #ab47bc; margin-top: -5px; }
+    .cake-layer-3 { width: 100px; height: 33px; background: linear-gradient(135deg, #90caf9, #64b5f6); border-bottom: 4px solid #42a5f5; margin-top: -5px; }
+    .cake-plate { width: 180px; height: 14px; background: linear-gradient(135deg, #fff, #e0e0e0); border-radius: 0 0 50% 50%; margin: 0 auto; }
 
-    .cake-layer {
-      border-radius: 10px;
-      margin: 0 auto;
-    }
-
-    .cake-layer-1 {
-      width: 160px;
-      height: 50px;
-      background: linear-gradient(135deg, #f5a9bc 0%, #f48fb1 100%);
-      border-bottom: 4px solid #ec407a;
-    }
-
-    .cake-layer-2 {
-      width: 130px;
-      height: 40px;
-      background: linear-gradient(135deg, #ce93d8 0%, #ba68c8 100%);
-      border-bottom: 4px solid #ab47bc;
-      margin-top: -5px;
-    }
-
-    .cake-layer-3 {
-      width: 100px;
-      height: 35px;
-      background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
-      border-bottom: 4px solid #42a5f5;
-      margin-top: -5px;
-    }
-
-    .cake-plate {
-      width: 180px;
-      height: 15px;
-      background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
-      border-radius: 0 0 50% 50%;
-      margin: 0 auto;
+    /* Frosting drips */
+    .drip {
+      position: absolute; width: 12px; border-radius: 0 0 6px 6px;
+      background: linear-gradient(to bottom, #f48fb1, #ec407a);
     }
 
     /* Candles */
     .candles {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 15px;
-      justify-content: center;
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 14px; justify-content: center;
     }
-
     .candle {
-      position: relative;
-      width: 8px;
-      height: 40px;
-      background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%);
+      position: relative; width: 8px; height: 38px;
+      background: linear-gradient(135deg, #ffeb3b, #ffc107);
       border-radius: 3px;
+      cursor: pointer;
+      transition: transform .15s;
     }
-
+    .candle:active { transform: scale(.9); }
     .candle::before {
-      content: '';
-      position: absolute;
-      top: -3px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 4px;
-      height: 6px;
-      background: #333;
-      border-radius: 2px;
+      content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 6px; background: #333; border-radius: 2px;
     }
 
     /* Flame */
     .flame {
-      position: absolute;
-      top: -25px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 12px;
-      height: 20px;
+      position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+      width: 12px; height: 18px;
       background: linear-gradient(to top, #ff9800, #ffeb3b, #fff);
       border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      animation: flicker 0.3s ease-in-out infinite alternate;
-      box-shadow: 0 0 20px #ff9800, 0 0 40px #ff5722;
-      transition: opacity 0.3s, transform 0.3s;
+      animation: flicker .3s ease-in-out infinite alternate;
+      box-shadow: 0 0 15px #ff9800, 0 0 35px #ff5722;
+      transition: opacity .3s, transform .3s;
     }
+    .flame.out { opacity: 0; transform: translateX(-50%) scale(0); }
+    @keyframes flicker { 0% { transform: translateX(-50%) scale(1) rotate(-2deg); } 100% { transform: translateX(-50%) scale(1.1) rotate(2deg); } }
 
-    .flame.out {
-      opacity: 0;
-      transform: translateX(-50%) scale(0);
-    }
-
-    @keyframes flicker {
-      0% { transform: translateX(-50%) scale(1) rotate(-2deg); }
-      100% { transform: translateX(-50%) scale(1.1) rotate(2deg); }
-    }
-
-    /* Smoke when blown out */
+    /* Smoke */
     .smoke {
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 8px;
-      height: 8px;
-      background: rgba(150, 150, 150, 0.6);
-      border-radius: 50%;
-      opacity: 0;
+      position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+      width: 8px; height: 8px; background: rgba(150,150,150,0.6);
+      border-radius: 50%; opacity: 0;
     }
+    .smoke.active { animation: smoke-rise 1.5s ease-out forwards; }
+    @keyframes smoke-rise { 0% { opacity:.8; transform: translateX(-50%) translateY(0) scale(1); } 100% { opacity:0; transform: translateX(-50%) translateY(-60px) scale(3); } }
 
-    .smoke.active {
-      animation: smoke-rise 1.5s ease-out forwards;
-    }
-
-    @keyframes smoke-rise {
-      0% {
-        opacity: 0.8;
-        transform: translateX(-50%) translateY(0) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-60px) scale(3);
-      }
-    }
-
-    /* Blow Button / Mic Prompt */
-    .blow-section {
-      margin-top: 1rem;
-    }
-
+    /* Blow section (mic addon) */
+    .blow-section { margin-top: .8rem; }
     .blow-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      border: none;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
-      pointer-events: auto;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; border: none;
+      padding: .8rem 1.8rem; font-size: .95rem; font-weight: 600;
+      border-radius: 50px; cursor: pointer;
+      transition: all .3s;
+      box-shadow: 0 6px 25px rgba(102,126,234,0.4);
     }
+    .blow-btn:hover { transform: translateY(-2px); }
+    .blow-btn:active { transform: scale(.97); }
+    .mic-status { font-size: .8rem; color: rgba(255,255,255,.5); margin-top: .6rem; }
+    .mic-status.listening { color: #4caf50; }
+    .mic-status.error { color: #ff5722; }
 
-    .blow-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
-    }
-
-    .blow-btn:active {
-      transform: scale(0.98);
-    }
-
-    .mic-status {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 0.75rem;
-    }
-
-    .mic-status.listening {
-      color: #4caf50;
-    }
-
-    .mic-status.error {
-      color: #ff5722;
-    }
-
-    /* Mic Visualizer */
     .mic-visualizer {
-      display: none;
-      width: 100%;
-      max-width: 200px;
-      height: 40px;
-      margin: 1rem auto 0;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      overflow: hidden;
-      position: relative;
+      display: none; width: 100%; max-width: 180px; height: 36px;
+      margin: .8rem auto 0; background: rgba(255,255,255,.08);
+      border-radius: 18px; overflow: hidden; position: relative;
     }
-
-    .mic-visualizer.active {
-      display: block;
-    }
-
+    .mic-visualizer.active { display: block; }
     .mic-bar {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      height: 0%;
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 80%; height: 0%;
       background: linear-gradient(to top, #4caf50, #8bc34a);
-      border-radius: 10px 10px 0 0;
-      transition: height 0.05s;
+      border-radius: 10px 10px 0 0; transition: height .05s;
     }
-
     .blow-threshold {
-      position: absolute;
-      top: 30%;
-      left: 10%;
-      right: 10%;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.5);
+      position: absolute; top: 30%; left: 10%; right: 10%;
+      height: 2px; background: rgba(255,255,255,.4);
+    }
+    .blow-threshold::after {
+      content: 'Blow here!'; position: absolute; right: 0; top: -8px;
+      font-size: .6rem; color: rgba(255,255,255,.5);
     }
 
-    .blow-threshold::after {
-      content: 'Blow here!';
-      position: absolute;
-      right: 0;
-      top: -8px;
-      font-size: 0.65rem;
-      color: rgba(255, 255, 255, 0.6);
+    /* Tap hint (default - no mic addon) */
+    .tap-hint {
+      font-size: .8rem; color: rgba(255,255,255,.5);
+      margin-top: .8rem;
+      animation: pulse 2s ease-in-out infinite;
     }
+    @keyframes pulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
 
     /* Result */
     .result {
-      display: none;
-      color: #fff;
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-top: 1rem;
-      text-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
+      display: none; color: #fff;
+      font-size: 1.2rem; font-weight: 700;
+      margin-top: .8rem;
+      text-shadow: 0 0 30px rgba(102,126,234,.8);
     }
+    .result.visible { display: block; animation: pop-in .5s cubic-bezier(.68,-.55,.265,1.55); }
+    @keyframes pop-in { from { transform: scale(0); opacity:0; } to { transform: scale(1); opacity:1; } }
 
-    .result.visible {
-      display: block;
-      animation: pop-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    @keyframes pop-in {
-      from { transform: scale(0); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    /* Hint for balloons */
+    /* Balloon hint */
     .balloon-hint {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 0.8rem;
-      z-index: 5;
-      text-align: center;
-      pointer-events: none;
-      animation: fade-hint 3s ease-out forwards;
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,.4); font-size: .75rem; z-index: 5;
+      text-align: center; pointer-events: none;
+      animation: fade-hint 4s ease-out forwards;
     }
-
-    @keyframes fade-hint {
-      0%, 70% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+    @keyframes fade-hint { 0%,60% { opacity:1; } 100% { opacity:0; } }
 
     /* Confetti */
     .confetti {
-      position: fixed;
-      font-size: 2rem;
-      pointer-events: none;
-      z-index: 100;
+      position: fixed; font-size: 1.8rem; pointer-events: none; z-index: 100;
       animation: confetti-fall 4s linear forwards;
     }
-
     @keyframes confetti-fall {
-      0% {
-        transform: translateY(-100px) rotate(0deg) scale(0);
-        opacity: 1;
-      }
-      10% {
-        transform: translateY(0) rotate(30deg) scale(1);
-      }
-      100% {
-        transform: translateY(100vh) rotate(720deg) scale(0.5);
-        opacity: 0;
-      }
+      0% { transform: translateY(-100px) rotate(0) scale(0); opacity:1; }
+      10% { transform: translateY(0) rotate(30deg) scale(1); }
+      100% { transform: translateY(100vh) rotate(720deg) scale(.5); opacity:0; }
     }
 
-    .hidden {
-      display: none !important;
+    /* Sparkles */
+    .sparkle {
+      position: fixed; border-radius: 50%; pointer-events: none; z-index: 15;
+      animation: sparkFloat 2.5s ease-out forwards;
+    }
+    @keyframes sparkFloat {
+      0% { opacity:1; transform: scale(1) translateY(0); }
+      100% { opacity:0; transform: scale(0) translateY(-30px); }
     }
 
-    /* Mobile */
+    .hidden { display: none !important; }
+
     @media (max-width: 480px) {
-      .card {
-        padding: 1.5rem;
-      }
-
-      h1 {
-        font-size: 1.4rem;
-      }
-
-      .cake-container {
-        transform: scale(0.85);
-        margin: 0.5rem auto;
-      }
+      .card { padding: 1.3rem 1.2rem; }
+      .cake-container { transform: scale(.82); margin: .3rem auto; }
     }
   </style>
 </head>
 <body>
-  <!-- Physics Canvas for Balloons -->
   <canvas id="physics-canvas"></canvas>
 
-  <!-- Content -->
   <div class="content">
     <div class="card">
       <h1>Happy Birthday <span class="emoji">🎂</span><br>{{recipientName}}!</h1>
       <p class="message">{{customMessage}}</p>
 
-      <!-- Cake with Candles -->
       <div class="cake-container">
         <div class="candles" id="candles">
-          <div class="candle"><div class="flame" id="flame-0"></div><div class="smoke" id="smoke-0"></div></div>
-          <div class="candle"><div class="flame" id="flame-1"></div><div class="smoke" id="smoke-1"></div></div>
-          <div class="candle"><div class="flame" id="flame-2"></div><div class="smoke" id="smoke-2"></div></div>
-          <div class="candle"><div class="flame" id="flame-3"></div><div class="smoke" id="smoke-3"></div></div>
-          <div class="candle"><div class="flame" id="flame-4"></div><div class="smoke" id="smoke-4"></div></div>
+          <div class="candle" onclick="tapCandle(0)"><div class="flame" id="flame-0"></div><div class="smoke" id="smoke-0"></div></div>
+          <div class="candle" onclick="tapCandle(1)"><div class="flame" id="flame-1"></div><div class="smoke" id="smoke-1"></div></div>
+          <div class="candle" onclick="tapCandle(2)"><div class="flame" id="flame-2"></div><div class="smoke" id="smoke-2"></div></div>
+          <div class="candle" onclick="tapCandle(3)"><div class="flame" id="flame-3"></div><div class="smoke" id="smoke-3"></div></div>
+          <div class="candle" onclick="tapCandle(4)"><div class="flame" id="flame-4"></div><div class="smoke" id="smoke-4"></div></div>
         </div>
         <div class="cake">
           <div class="cake-layer cake-layer-3"></div>
           <div class="cake-layer cake-layer-2"></div>
-          <div class="cake-layer cake-layer-1"></div>
+          <div class="cake-layer cake-layer-1">
+            <div class="drip" style="left:20px;height:14px;top:100%;"></div>
+            <div class="drip" style="left:60px;height:18px;top:100%;"></div>
+            <div class="drip" style="left:110px;height:12px;top:100%;"></div>
+            <div class="drip" style="left:140px;height:16px;top:100%;"></div>
+          </div>
           <div class="cake-plate"></div>
         </div>
       </div>
 
-      <!-- Blow Section -->
-      <div class="blow-section" id="blow-section">
+      <!-- Mic Blow section (addon) -->
+      <div class="blow-section" id="blow-section" style="display:none;">
         <button class="blow-btn" id="blow-btn">🎤 Blow Out Candles!</button>
         <p class="mic-status" id="mic-status">Tap to enable microphone</p>
         <div class="mic-visualizer" id="mic-visualizer">
@@ -433,24 +265,35 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
         </div>
       </div>
 
+      <!-- Tap hint (default, no mic addon) -->
+      <p class="tap-hint" id="tap-hint">👆 Tap the candles to blow them out!</p>
+
       <div class="result" id="result">🎉 Make a wish! 🌟</div>
     </div>
   </div>
 
-  <!-- Balloon Hint -->
   <div class="balloon-hint">🎈 Drag and throw the balloons!</div>
 
-  <!-- Matter.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
   <script>
-    // ============================================
-    // Matter.js Physics Setup
-    // ============================================
-    const canvas = document.getElementById('physics-canvas');
-    const ctx = canvas.getContext('2d');
+    var hasMicBlow = '{{enableMicBlow}}' === 'true';
+    var hasConfetti = '{{enableConfetti}}' === 'true';
+    var hasSparkles = '{{enableSparkles}}' === 'true';
+    var hasHaptics = 'vibrate' in navigator;
 
-    // Resize canvas
+    // Show mic section or tap hint
+    if (hasMicBlow) {
+      document.getElementById('blow-section').style.display = 'block';
+      document.getElementById('tap-hint').style.display = 'none';
+    }
+
+    // ============================================
+    // Matter.js Physics Balloons
+    // ============================================
+    var canvas = document.getElementById('physics-canvas');
+    var ctx = canvas.getContext('2d');
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -458,394 +301,328 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Matter.js modules
-    const { Engine, Render, World, Bodies, Body, Mouse, MouseConstraint, Events, Composite } = Matter;
+    var Engine = Matter.Engine, World = Matter.World, Bodies = Matter.Bodies,
+        Body = Matter.Body, Mouse = Matter.Mouse, MouseConstraint = Matter.MouseConstraint,
+        Events = Matter.Events, Composite = Matter.Composite;
 
-    // Create engine
-    const engine = Engine.create();
-    engine.world.gravity.y = 0.5; // Lighter gravity for floaty balloons
+    var engine = Engine.create();
+    engine.world.gravity.y = 0.5;
 
-    // Balloon colors
-    const balloonColors = [
-      '#ff6b6b', '#ff8e53', '#feca57', '#48dbfb', '#ff9ff3',
-      '#54a0ff', '#5f27cd', '#00d2d3', '#ff6b9d', '#c44569'
+    var balloonColors = [
+      '#ff6b6b','#ff8e53','#feca57','#48dbfb','#ff9ff3',
+      '#54a0ff','#5f27cd','#00d2d3','#ff6b9d','#c44569'
     ];
 
-    // Create balloons
-    const balloons = [];
-    const balloonCount = 15;
+    var balloons = [];
+    var balloonCount = 15;
 
     function createBalloon(x, y) {
-      const color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
-      const radius = 30 + Math.random() * 20;
-
-      const balloon = Bodies.circle(x, y, radius, {
-        restitution: 0.6, // Bouncy
-        friction: 0.1,
-        frictionAir: 0.02,
-        density: 0.0005, // Light
-        render: { fillStyle: color },
+      var color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+      var radius = 28 + Math.random() * 18;
+      return Bodies.circle(x, y, radius, {
+        restitution: 0.6, friction: 0.1, frictionAir: 0.02, density: 0.0005,
         label: 'balloon',
         balloonColor: color,
         balloonRadius: radius,
-        stringLength: 40 + Math.random() * 30
+        stringLength: 35 + Math.random() * 25
       });
-
-      return balloon;
     }
 
-    // Spawn balloons at bottom, piled up
-    for (let i = 0; i < balloonCount; i++) {
-      const x = Math.random() * (canvas.width - 100) + 50;
-      const y = canvas.height - 100 - Math.random() * 200;
-      const balloon = createBalloon(x, y);
-      balloons.push(balloon);
-      World.add(engine.world, balloon);
+    for (var i = 0; i < balloonCount; i++) {
+      var x = Math.random() * (canvas.width - 100) + 50;
+      var y = canvas.height - 100 - Math.random() * 200;
+      var b = createBalloon(x, y);
+      balloons.push(b);
+      World.add(engine.world, b);
     }
 
-    // Create walls (invisible)
-    const wallThickness = 50;
-    const walls = [
-      // Floor
-      Bodies.rectangle(canvas.width / 2, canvas.height + wallThickness / 2, canvas.width * 2, wallThickness, { isStatic: true, label: 'floor' }),
-      // Left wall
-      Bodies.rectangle(-wallThickness / 2, canvas.height / 2, wallThickness, canvas.height * 2, { isStatic: true }),
-      // Right wall
-      Bodies.rectangle(canvas.width + wallThickness / 2, canvas.height / 2, wallThickness, canvas.height * 2, { isStatic: true }),
-      // Ceiling
-      Bodies.rectangle(canvas.width / 2, -wallThickness / 2, canvas.width * 2, wallThickness, { isStatic: true })
+    var wallThickness = 50;
+    var walls = [
+      Bodies.rectangle(canvas.width/2, canvas.height + wallThickness/2, canvas.width*2, wallThickness, { isStatic: true }),
+      Bodies.rectangle(-wallThickness/2, canvas.height/2, wallThickness, canvas.height*2, { isStatic: true }),
+      Bodies.rectangle(canvas.width + wallThickness/2, canvas.height/2, wallThickness, canvas.height*2, { isStatic: true }),
+      Bodies.rectangle(canvas.width/2, -wallThickness/2, canvas.width*2, wallThickness, { isStatic: true })
     ];
     World.add(engine.world, walls);
 
-    // Mouse constraint for dragging
-    const mouse = Mouse.create(canvas);
-    const mouseConstraint = MouseConstraint.create(engine, {
+    var mouse = Mouse.create(canvas);
+    var mouseConstraint = MouseConstraint.create(engine, {
       mouse: mouse,
-      constraint: {
-        stiffness: 0.2,
-        render: { visible: false }
-      }
+      constraint: { stiffness: 0.2, render: { visible: false } }
     });
     World.add(engine.world, mouseConstraint);
 
     // Touch support
-    canvas.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      mouse.position.x = touch.clientX - rect.left;
-      mouse.position.y = touch.clientY - rect.top;
+    canvas.addEventListener('touchstart', function(e) {
+      var t = e.touches[0], r = canvas.getBoundingClientRect();
+      mouse.position.x = t.clientX - r.left;
+      mouse.position.y = t.clientY - r.top;
       mouse.button = 0;
     }, { passive: false });
-
-    canvas.addEventListener('touchmove', (e) => {
+    canvas.addEventListener('touchmove', function(e) {
       e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      mouse.position.x = touch.clientX - rect.left;
-      mouse.position.y = touch.clientY - rect.top;
+      var t = e.touches[0], r = canvas.getBoundingClientRect();
+      mouse.position.x = t.clientX - r.left;
+      mouse.position.y = t.clientY - r.top;
     }, { passive: false });
+    canvas.addEventListener('touchend', function() { mouse.button = -1; });
 
-    canvas.addEventListener('touchend', () => {
-      mouse.button = -1;
-    });
-
-    // Apply slight upward force to balloons (helium effect)
-    Events.on(engine, 'beforeUpdate', () => {
-      balloons.forEach(balloon => {
-        if (balloon.position.y > 100) {
-          Body.applyForce(balloon, balloon.position, { x: 0, y: -0.0002 });
+    // Helium effect
+    Events.on(engine, 'beforeUpdate', function() {
+      balloons.forEach(function(b) {
+        if (b.position.y > 100) {
+          Body.applyForce(b, b.position, { x: 0, y: -0.0002 });
         }
       });
     });
 
-    // Render loop
+    // Render balloons
     function renderBalloons() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      balloons.forEach(function(b) {
+        var x = b.position.x, y = b.position.y;
+        var rad = b.balloonRadius, col = b.balloonColor, sLen = b.stringLength;
 
-      balloons.forEach(balloon => {
-        const { x, y } = balloon.position;
-        const radius = balloon.balloonRadius;
-        const color = balloon.balloonColor;
-        const stringLength = balloon.stringLength;
-
-        // Draw string
+        // String
         ctx.beginPath();
-        ctx.moveTo(x, y + radius);
-        ctx.quadraticCurveTo(
-          x + Math.sin(Date.now() / 500 + x) * 5,
-          y + radius + stringLength / 2,
-          x,
-          y + radius + stringLength
-        );
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.moveTo(x, y + rad);
+        ctx.quadraticCurveTo(x + Math.sin(Date.now()/500 + x)*5, y + rad + sLen/2, x, y + rad + sLen);
+        ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; ctx.stroke();
 
-        // Draw balloon body
+        // Body
         ctx.beginPath();
-        ctx.ellipse(x, y, radius * 0.85, radius, 0, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
+        ctx.ellipse(x, y, rad*.85, rad, 0, 0, Math.PI*2);
+        ctx.fillStyle = col; ctx.fill();
 
-        // Balloon shine
+        // Shine
         ctx.beginPath();
-        ctx.ellipse(x - radius * 0.3, y - radius * 0.3, radius * 0.25, radius * 0.35, -0.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.fill();
+        ctx.ellipse(x - rad*.3, y - rad*.3, rad*.22, rad*.32, -.5, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill();
 
-        // Balloon knot
+        // Knot
         ctx.beginPath();
-        ctx.moveTo(x - 6, y + radius - 2);
-        ctx.lineTo(x, y + radius + 8);
-        ctx.lineTo(x + 6, y + radius - 2);
-        ctx.fillStyle = color;
-        ctx.fill();
+        ctx.moveTo(x-5, y+rad-2); ctx.lineTo(x, y+rad+7); ctx.lineTo(x+5, y+rad-2);
+        ctx.fillStyle = col; ctx.fill();
       });
-
       requestAnimationFrame(renderBalloons);
     }
 
-    // Start physics engine
     Engine.run(engine);
     renderBalloons();
 
-    // Update walls on resize
-    window.addEventListener('resize', () => {
+    // Resize walls
+    window.addEventListener('resize', function() {
       resizeCanvas();
-      // Remove old walls and add new ones
       Composite.remove(engine.world, walls);
       walls.length = 0;
       walls.push(
-        Bodies.rectangle(canvas.width / 2, canvas.height + wallThickness / 2, canvas.width * 2, wallThickness, { isStatic: true, label: 'floor' }),
-        Bodies.rectangle(-wallThickness / 2, canvas.height / 2, wallThickness, canvas.height * 2, { isStatic: true }),
-        Bodies.rectangle(canvas.width + wallThickness / 2, canvas.height / 2, wallThickness, canvas.height * 2, { isStatic: true }),
-        Bodies.rectangle(canvas.width / 2, -wallThickness / 2, canvas.width * 2, wallThickness, { isStatic: true })
+        Bodies.rectangle(canvas.width/2, canvas.height+wallThickness/2, canvas.width*2, wallThickness, { isStatic: true }),
+        Bodies.rectangle(-wallThickness/2, canvas.height/2, wallThickness, canvas.height*2, { isStatic: true }),
+        Bodies.rectangle(canvas.width+wallThickness/2, canvas.height/2, wallThickness, canvas.height*2, { isStatic: true }),
+        Bodies.rectangle(canvas.width/2, -wallThickness/2, canvas.width*2, wallThickness, { isStatic: true })
       );
       World.add(engine.world, walls);
     });
 
     // ============================================
-    // Microphone Candle Blowing
+    // Sparkles addon (around cake)
     // ============================================
-    const blowBtn = document.getElementById('blow-btn');
-    const micStatus = document.getElementById('mic-status');
-    const micVisualizer = document.getElementById('mic-visualizer');
-    const micBar = document.getElementById('mic-bar');
-    const blowSection = document.getElementById('blow-section');
-    const result = document.getElementById('result');
+    if (hasSparkles) {
+      setInterval(function() {
+        var card = document.querySelector('.cake-container');
+        if (!card) return;
+        var r = card.getBoundingClientRect();
+        var s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left = (r.left + Math.random()*r.width) + 'px';
+        s.style.top = (r.top + Math.random()*r.height) + 'px';
+        var sz = (3 + Math.random()*5) + 'px';
+        s.style.width = sz; s.style.height = sz;
+        s.style.background = ['#feca57','#ff9ff3','#48dbfb','#fff','#ff6b6b'][Math.floor(Math.random()*5)];
+        document.body.appendChild(s);
+        setTimeout(function() { s.remove(); }, 2500);
+      }, 300);
+    }
 
-    let audioContext = null;
-    let analyser = null;
-    let microphone = null;
-    let isListening = false;
-    let candlesLit = 5;
-    let blowStrength = 0;
-    const BLOW_THRESHOLD = 0.4; // Sensitivity (0-1)
+    // ============================================
+    // Candle Blowing Logic
+    // ============================================
+    var candlesLit = 5;
+    var audioContext = null;
+    var analyser = null;
+    var isListening = false;
+    var blowStrength = 0;
+    var BLOW_THRESHOLD = 0.4;
 
-    async function startMicrophone() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Tap to blow (always available, default mode)
+    function tapCandle(idx) {
+      if (!hasMicBlow || !isListening) {
+        // Tap mode
+        var flame = document.getElementById('flame-' + idx);
+        var smoke = document.getElementById('smoke-' + idx);
+        if (flame && !flame.classList.contains('out')) {
+          flame.classList.add('out');
+          smoke.classList.add('active');
+          candlesLit--;
+          if (hasHaptics) navigator.vibrate(50);
+          if (candlesLit <= 0) setTimeout(celebrateSuccess, 500);
+        }
+      }
+    }
 
+    // Mic blow (addon)
+    if (hasMicBlow) {
+      var blowBtn = document.getElementById('blow-btn');
+      var micStatus = document.getElementById('mic-status');
+      var micVisualizer = document.getElementById('mic-visualizer');
+      var micBar = document.getElementById('mic-bar');
+
+      blowBtn.addEventListener('click', function() {
+        if (!isListening) startMicrophone();
+      });
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        micStatus.textContent = '📱 Mic not supported. Tap candles instead!';
+        blowBtn.classList.add('hidden');
+        document.getElementById('tap-hint').style.display = 'block';
+        document.getElementById('blow-section').style.display = 'none';
+      }
+    }
+
+    function startMicrophone() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
-
-        microphone = audioContext.createMediaStreamSource(stream);
-        microphone.connect(analyser);
+        audioContext.createMediaStreamSource(stream).connect(analyser);
 
         isListening = true;
-        micStatus.textContent = '🎤 Blow into the mic!';
-        micStatus.classList.add('listening');
-        micVisualizer.classList.add('active');
-        blowBtn.textContent = '🌬️ Listening...';
-        blowBtn.disabled = true;
+        document.getElementById('mic-status').textContent = '🎤 Blow into the mic!';
+        document.getElementById('mic-status').classList.add('listening');
+        document.getElementById('mic-visualizer').classList.add('active');
+        document.getElementById('blow-btn').textContent = '🌬️ Listening...';
+        document.getElementById('blow-btn').disabled = true;
 
         detectBlow();
-      } catch (err) {
-        console.error('Microphone error:', err);
-        micStatus.textContent = '❌ Mic access denied. Tap candles to blow!';
-        micStatus.classList.add('error');
-        enableTapToBlow();
-      }
+      }).catch(function() {
+        document.getElementById('mic-status').textContent = '❌ Mic denied. Tap candles instead!';
+        document.getElementById('mic-status').classList.add('error');
+        // Fall back to tap
+        document.getElementById('tap-hint').style.display = 'block';
+      });
     }
 
     function detectBlow() {
       if (!isListening || candlesLit <= 0) return;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(dataArray);
-
-      // Calculate average volume
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
-      }
-      const average = sum / dataArray.length / 255;
-
-      // Update visualizer
-      micBar.style.height = (average * 100) + '%';
-
-      // Smooth blow strength
-      blowStrength = blowStrength * 0.8 + average * 0.2;
-
-      // Check if blowing
-      if (blowStrength > BLOW_THRESHOLD) {
-        // Blow out a candle
-        blowOutCandle();
-      }
-
+      var data = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(data);
+      var sum = 0;
+      for (var i = 0; i < data.length; i++) sum += data[i];
+      var avg = sum / data.length / 255;
+      document.getElementById('mic-bar').style.height = (avg*100) + '%';
+      blowStrength = blowStrength * 0.8 + avg * 0.2;
+      if (blowStrength > BLOW_THRESHOLD) blowOutCandle();
       requestAnimationFrame(detectBlow);
     }
 
     function blowOutCandle() {
       if (candlesLit <= 0) return;
-
-      const candleIndex = candlesLit - 1;
-      const flame = document.getElementById('flame-' + candleIndex);
-      const smoke = document.getElementById('smoke-' + candleIndex);
-
+      var idx = candlesLit - 1;
+      var flame = document.getElementById('flame-' + idx);
+      var smoke = document.getElementById('smoke-' + idx);
       if (flame && !flame.classList.contains('out')) {
         flame.classList.add('out');
         smoke.classList.add('active');
         candlesLit--;
-
-        // Vibrate on mobile
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
-        }
-
-        if (candlesLit <= 0) {
-          // All candles blown out!
-          setTimeout(celebrateSuccess, 500);
-        }
+        if (hasHaptics) navigator.vibrate(50);
+        if (candlesLit <= 0) setTimeout(celebrateSuccess, 500);
       }
-    }
-
-    function enableTapToBlow() {
-      // Fallback: tap candles to blow them out
-      const candles = document.querySelectorAll('.candle');
-      candles.forEach((candle, i) => {
-        candle.style.cursor = 'pointer';
-        candle.style.pointerEvents = 'auto';
-        candle.addEventListener('click', () => {
-          const flame = document.getElementById('flame-' + i);
-          const smoke = document.getElementById('smoke-' + i);
-          if (flame && !flame.classList.contains('out')) {
-            flame.classList.add('out');
-            smoke.classList.add('active');
-            candlesLit--;
-
-            if (candlesLit <= 0) {
-              setTimeout(celebrateSuccess, 500);
-            }
-          }
-        });
-      });
-
-      micStatus.textContent = '👆 Tap candles to blow them out!';
     }
 
     function celebrateSuccess() {
       isListening = false;
+      if (audioContext) audioContext.close();
 
-      // Stop audio
-      if (audioContext) {
-        audioContext.close();
-      }
+      // Hide blow UI
+      var bs = document.getElementById('blow-section');
+      if (bs) bs.style.display = 'none';
+      document.getElementById('tap-hint').style.display = 'none';
+      document.getElementById('result').classList.add('visible');
 
-      // Hide blow section, show result
-      blowSection.classList.add('hidden');
-      result.classList.add('visible');
+      // Confetti
+      if (hasConfetti) spawnConfetti();
 
-      // Spawn confetti
-      spawnConfetti();
-
-      // Make balloons go crazy
-      balloons.forEach(balloon => {
-        Body.applyForce(balloon, balloon.position, {
-          x: (Math.random() - 0.5) * 0.05,
-          y: -0.02 - Math.random() * 0.02
+      // Balloons go crazy
+      balloons.forEach(function(b) {
+        Body.applyForce(b, b.position, {
+          x: (Math.random()-.5) * .05,
+          y: -.02 - Math.random() * .02
         });
       });
     }
 
     function spawnConfetti() {
-      const emojis = ['🎉', '🎊', '🎈', '🎂', '🎁', '⭐', '✨', '🥳', '🎵', '💖'];
-
-      for (let i = 0; i < 60; i++) {
-        setTimeout(() => {
-          const confetti = document.createElement('div');
-          confetti.className = 'confetti';
-          confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-          confetti.style.left = Math.random() * 100 + 'vw';
-          confetti.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
-          confetti.style.animationDuration = (3 + Math.random() * 2) + 's';
-          document.body.appendChild(confetti);
-
-          setTimeout(() => confetti.remove(), 5000);
-        }, i * 40);
+      var emojis = ['🎉','🎊','🎈','🎂','🎁','⭐','✨','🥳','🎵','💖'];
+      for (var i = 0; i < 60; i++) {
+        (function(idx) {
+          setTimeout(function() {
+            var c = document.createElement('div');
+            c.className = 'confetti';
+            c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+            c.style.left = Math.random()*100 + 'vw';
+            c.style.fontSize = (1.5+Math.random()*1.5) + 'rem';
+            c.style.animationDuration = (3+Math.random()*2) + 's';
+            document.body.appendChild(c);
+            setTimeout(function() { c.remove(); }, 5000);
+          }, idx*40);
+        })(i);
       }
-    }
-
-    // Button click handler
-    blowBtn.addEventListener('click', () => {
-      if (!isListening) {
-        startMicrophone();
-      }
-    });
-
-    // Check if getUserMedia is supported
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      micStatus.textContent = '📱 Mic not supported. Tap candles instead!';
-      enableTapToBlow();
-      blowBtn.classList.add('hidden');
     }
   </script>
 </body>
 </html>`;
 
-async function upgradeBirthdayTemplate() {
-  console.log('🎂 Upgrading Birthday Bash to "Physics Party"...\n');
+async function main() {
+  console.log('Upgrading Birthday Bash template...');
 
-  // Update the existing template
-  const result = await db
+  // Try to update "Physics Party" (current name in DB)
+  let result = await db
     .update(templates)
     .set({
-      name: 'Physics Party',
-      description: 'A physics-powered birthday celebration! Drag and throw real balloons with Matter.js physics, and blow into your microphone to extinguish the candles. Mobile-first with touch support.',
+      name: 'Birthday Bash',
+      description: 'An interactive birthday celebration! Drag and throw physics balloons, tap candles to blow them out, and celebrate with confetti. Add the mic blowing addon for a real blow-out experience!',
       htmlTemplate: upgradedBirthdayTemplate,
       cssTemplate: '',
       jsTemplate: '',
       updatedAt: new Date(),
     })
-    .where(eq(templates.name, 'Birthday Bash'))
+    .where(eq(templates.name, 'Physics Party'))
     .returning();
 
   if (result.length > 0) {
-    console.log('✅ Upgraded template:', result[0].name);
-    console.log('   ID:', result[0].id);
+    console.log('Updated Physics Party -> Birthday Bash');
   } else {
-    // If "Birthday Bash" doesn't exist, create new
-    const newResult = await db.insert(templates).values({
-      name: 'Physics Party',
-      description: 'A physics-powered birthday celebration! Drag and throw real balloons with Matter.js physics, and blow into your microphone to extinguish the candles. Mobile-first with touch support.',
-      occasion: ['birthday'],
-      thumbnailUrl: '',
-      basePrice: '3.99',
-      htmlTemplate: upgradedBirthdayTemplate,
-      cssTemplate: '',
-      jsTemplate: '',
-      isActive: true,
-    }).returning();
+    // Try "Birthday Bash" (original name)
+    result = await db
+      .update(templates)
+      .set({
+        description: 'An interactive birthday celebration! Drag and throw physics balloons, tap candles to blow them out, and celebrate with confetti. Add the mic blowing addon for a real blow-out experience!',
+        htmlTemplate: upgradedBirthdayTemplate,
+        cssTemplate: '',
+        jsTemplate: '',
+        updatedAt: new Date(),
+      })
+      .where(eq(templates.name, 'Birthday Bash'))
+      .returning();
 
-    console.log('✅ Created new template:', newResult[0].name);
-    console.log('   ID:', newResult[0].id);
+    if (result.length > 0) {
+      console.log('Updated Birthday Bash template');
+    } else {
+      console.log('Template not found (tried Physics Party and Birthday Bash)');
+    }
   }
 
   process.exit(0);
 }
 
-upgradeBirthdayTemplate().catch((err) => {
-  console.error('❌ Error:', err);
-  process.exit(1);
-});
+main().catch(console.error);
