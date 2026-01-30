@@ -19,6 +19,7 @@ function escapeHtml(str: string): string {
 // Fields that should NOT be escaped (contain intentional HTML/URLs)
 const RAW_FIELDS = new Set([
   'imageUrl', 'thumbnailUrl', 'audioUrl', 'videoUrl',
+  'memeImageUrls', 'memeSlide1', 'memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5',
   // Add any template fields that intentionally hold HTML or URLs
 ]);
 

@@ -33,12 +33,20 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableLuckyNumbers: { label: 'Lucky Numbers', description: 'Add random lucky numbers to the fortune', icon: '🔢' },
   enableFireflies: { label: 'Fireflies', description: 'Warm glowing fireflies float across the night sky', icon: '🪲' },
   enableExtraBottles: { label: 'Extra Bottles', description: 'Two more bottles wash ashore, each with its own message', icon: '🍾' },
+  enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides (images or GIFs)', icon: '🖼️' },
 };
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraBottles: ['customMessage2', 'customMessage3'],
+  enableExtraSlides: ['memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5'],
 };
+
+// Fields managed by custom UI editors (hidden from the generic form)
+const CUSTOM_EDITOR_FIELDS = new Set([
+  'memeSlide1', 'memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5',
+  'memeCaption1', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5',
+]);
 
 // Smart field type detection based on variable name
 function detectFieldType(varName: string): TemplateVariable['type'] {
@@ -417,6 +425,9 @@ export default function CustomizePage() {
 
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
               {templateVariables.map((variable) => {
+                // Hide fields managed by custom UI editors
+                if (CUSTOM_EDITOR_FIELDS.has(variable.name)) return null;
+
                 // Check if this field depends on an addon being enabled
                 const dependentAddon = Object.entries(ADDON_DEPENDENT_FIELDS).find(
                   ([, fields]) => fields.includes(variable.name)
@@ -441,6 +452,84 @@ export default function CustomizePage() {
                   No customization fields available for this template.
                 </p>
               )}
+
+              {/* Meme Slide Editor - shown for templates with memeSlide fields */}
+              {templateVariables.some(v => v.name === 'memeSlide1') && (() => {
+                const extraSlidesEnabled = formData.enableExtraSlides === 'true';
+                const maxSlides = extraSlidesEnabled ? 5 : 1;
+                return (
+                  <div className="border-t border-white/5 pt-5 mt-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-white font-semibold text-sm">Meme Slides</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraSlidesEnabled ? 'Up to 5 slides' : '1 slide included'}
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      {Array.from({ length: maxSlides }, (_, i) => i + 1).map(num => {
+                        const slideKey = `memeSlide${num}`;
+                        const captionKey = `memeCaption${num}`;
+                        const slideVal = formData[slideKey] || '';
+                        const captionVal = formData[captionKey] || '';
+                        const isGif = slideVal.includes('.gif') || slideVal.includes('giphy.com') || slideVal.includes('.mp4') || slideVal.includes('.webm');
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-300">
+                                Slide {num}
+                                {num === 1 && <span className="text-gray-600 text-xs ml-2">(included)</span>}
+                                {num > 1 && <span className="text-accent-green text-xs ml-2">+$0.50</span>}
+                              </span>
+                              {isGif && (
+                                <span className="text-xs bg-accent-pink/10 text-accent-pink px-2 py-0.5 rounded-full">GIF/Video</span>
+                              )}
+                            </div>
+                            <input
+                              type="url"
+                              value={slideVal}
+                              onChange={(e) => setFormData({ ...formData, [slideKey]: e.target.value })}
+                              className="w-full px-3 py-2.5 bg-dark-900 border border-white/10 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-sm"
+                              placeholder="Paste image URL or Giphy GIF link..."
+                            />
+                            {slideVal && (
+                              <div className="mt-2 rounded-lg overflow-hidden bg-dark-900 max-h-32 flex items-center justify-center">
+                                <img
+                                  src={slideVal}
+                                  alt={`Slide ${num} preview`}
+                                  className="max-h-32 object-contain"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              </div>
+                            )}
+                            <input
+                              type="text"
+                              value={captionVal}
+                              onChange={(e) => setFormData({ ...formData, [captionKey]: e.target.value })}
+                              className="w-full mt-2 px-3 py-2 bg-dark-900 border border-white/10 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-sm"
+                              placeholder={`Caption for slide ${num} (optional)`}
+                              maxLength={100}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Giphy prompt */}
+                    <div className="mt-4 bg-dark-800/30 border border-white/5 rounded-xl p-4 text-center">
+                      <p className="text-gray-400 text-sm mb-2">Need funny GIFs?</p>
+                      <a
+                        href="https://giphy.com/search/funny"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                        Find GIFs on Giphy
+                      </a>
+                      <p className="text-gray-600 text-xs mt-2">Copy the GIF link and paste it above</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Effect Addons */}
