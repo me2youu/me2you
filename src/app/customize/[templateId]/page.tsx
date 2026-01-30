@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
+import { useUploadThing } from '@/lib/uploadthing';
 
 interface Template {
   id: string;
@@ -35,21 +36,25 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableExtraBottles: { label: 'Extra Bottles', description: 'Two more bottles wash ashore, each with its own message', icon: '🍾' },
   enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides ($0.50 each filled)', icon: '🖼️' },
   enableMicBlow: { label: 'Mic Blow', description: 'Blow into the microphone to extinguish candles!', icon: '🎤' },
+  enableExtraPhotos: { label: 'Extra Photos', description: 'Add up to 6 more photos ($0.50 each)', icon: '📸' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
-const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides']);
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraBottles: ['customMessage2', 'customMessage3'],
   enableExtraSlides: ['memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5'],
+  enableExtraPhotos: ['polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
 const CUSTOM_EDITOR_FIELDS = new Set([
   'memeSlide1', 'memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5',
   'memeCaption1', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5',
+  'polaroidPhoto1','polaroidPhoto2','polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8',
+  'polaroidCaption1','polaroidCaption2','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8',
 ]);
 
 // Smart field type detection based on variable name
@@ -74,6 +79,88 @@ function formatLabel(varName: string): string {
     .replace(/\s+/g, ' ')
     .replace(/\b\w/g, l => l.toUpperCase())
     .trim();
+}
+
+// Polaroid photo upload slot component
+function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaptionChange }: {
+  num: number; photoVal: string; captionVal: string;
+  onPhotoChange: (url: string) => void; onCaptionChange: (val: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const { startUpload } = useUploadThing('imageUploader');
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await startUpload([file]);
+      if (res?.[0]?.url) {
+        onPhotoChange(res[0].url);
+      }
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+      <div className="flex items-start gap-3">
+        {/* Thumbnail / Upload */}
+        <div className="w-16 h-16 shrink-0 rounded-md overflow-hidden bg-dark-900 border border-white/10 relative group">
+          {photoVal ? (
+            <>
+              <img src={photoVal} alt={`Photo ${num}`} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onPhotoChange('')}
+                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs"
+              >
+                Remove
+              </button>
+            </>
+          ) : (
+            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-dark-800 transition-colors">
+              {uploading ? (
+                <div className="w-5 h-5 border-2 border-accent-purple border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  <span className="text-[10px] text-gray-600 mt-0.5">Upload</span>
+                </>
+              )}
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={uploading} />
+            </label>
+          )}
+        </div>
+        {/* Info + Caption */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-400">
+              Photo {num}
+              {num <= 2 && <span className="text-gray-600 ml-1">(free)</span>}
+              {num > 2 && <span className="text-accent-green ml-1">+$0.50</span>}
+            </span>
+          </div>
+          <input
+            type="text"
+            value={captionVal}
+            onChange={(e) => onCaptionChange(e.target.value)}
+            className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+            placeholder="Caption (max 20 chars)"
+            maxLength={20}
+          />
+          {captionVal.length > 0 && (
+            <p className={`text-[10px] mt-0.5 text-right ${captionVal.length >= 18 ? 'text-accent-pink' : 'text-gray-600'}`}>
+              {captionVal.length}/20
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CustomizePage() {
@@ -229,7 +316,12 @@ export default function CustomizePage() {
     ? [2,3,4,5].filter(n => (formData[`memeSlide${n}`] || '').trim() !== '').length
     : 0;
   const extraSlidesPrice = filledExtraSlidesCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice;
+  // Per-photo pricing: photos 3-8 cost $0.50 each when extra photos addon is on
+  const filledExtraPhotosCount = formData.enableExtraPhotos === 'true'
+    ? [3,4,5,6,7,8].filter(n => (formData[`polaroidPhoto${n}`] || '').trim() !== '').length
+    : 0;
+  const extraPhotosPrice = filledExtraPhotosCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -258,6 +350,15 @@ export default function CustomizePage() {
         [2,3,4,5].forEach(n => {
           if ((formData[`memeSlide${n}`] || '').trim() !== '') {
             enabledAddons.push({ type: `extraSlide${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
+
+      // Add per-photo pricing for extra uploaded photos (3-8)
+      if (formData.enableExtraPhotos === 'true') {
+        [3,4,5,6,7,8].forEach(n => {
+          if ((formData[`polaroidPhoto${n}`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraPhoto${n}`, price: ADDON_PRICE });
           }
         });
       }
@@ -534,6 +635,49 @@ export default function CustomizePage() {
                   </div>
                 );
               })()}
+
+              {/* Polaroid Photo Editor - shown for templates with polaroidPhoto fields */}
+              {templateVariables.some(v => v.name === 'polaroidPhoto1') && (() => {
+                const extraPhotosEnabled = formData.enableExtraPhotos === 'true';
+                const maxPhotos = extraPhotosEnabled ? 8 : 2;
+                const filledExtra = extraPhotosEnabled
+                  ? [3,4,5,6,7,8].filter(n => (formData[`polaroidPhoto${n}`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Photos</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraPhotosEnabled ? 'Up to 8 photos' : '2 photos included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Upload photos for your polaroid wall</p>
+                    <div className="space-y-2">
+                      {Array.from({ length: maxPhotos }, (_, i) => i + 1).map(num => {
+                        const photoKey = `polaroidPhoto${num}`;
+                        const captionKey = `polaroidCaption${num}`;
+                        const photoVal = formData[photoKey] || '';
+                        const captionVal = formData[captionKey] || '';
+                        return (
+                          <PolaroidPhotoSlot
+                            key={num}
+                            num={num}
+                            photoVal={photoVal}
+                            captionVal={captionVal}
+                            onPhotoChange={(url: string) => setFormData({ ...formData, [photoKey]: url })}
+                            onCaptionChange={(val: string) => setFormData({ ...formData, [captionKey]: val })}
+                          />
+                        );
+                      })}
+                    </div>
+                    {extraPhotosEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra photo{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Effect Addons */}
@@ -672,11 +816,12 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
                         filledExtraSlidesCount > 0 ? `${filledExtraSlidesCount} extra slide${filledExtraSlidesCount > 1 ? 's' : ''}` : '',
+                        filledExtraPhotosCount > 0 ? `${filledExtraPhotosCount} extra photo${filledExtraPhotosCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>
