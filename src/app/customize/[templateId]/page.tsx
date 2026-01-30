@@ -38,10 +38,11 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableMicBlow: { label: 'Mic Blow', description: 'Blow into the microphone to extinguish candles!', icon: '🎤' },
   enableExtraPhotos: { label: 'Extra Photos', description: 'Add up to 6 more photos ($0.50 each)', icon: '📸' },
   enableExtraSongs: { label: 'Extra Songs', description: 'Add up to 3 more songs to your top 5 ($0.50 each)', icon: '🎵' },
+  enableExtraMoments: { label: 'Extra Moments', description: 'Add up to 3 more moments to your top 5 ($0.50 each)', icon: '✨' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
-const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs']);
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs', 'enableExtraMoments']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
@@ -49,6 +50,7 @@ const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraSlides: ['memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5'],
   enableExtraPhotos: ['polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8'],
   enableExtraSongs: ['wrappedSong3','wrappedArtist3','wrappedSong4','wrappedArtist4','wrappedSong5','wrappedArtist5'],
+  enableExtraMoments: ['wrappedMoment3','wrappedMoment4','wrappedMoment5'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
@@ -59,6 +61,7 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'polaroidCaption1','polaroidCaption2','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8',
   'wrappedSong1','wrappedSong2','wrappedSong3','wrappedSong4','wrappedSong5',
   'wrappedArtist1','wrappedArtist2','wrappedArtist3','wrappedArtist4','wrappedArtist5',
+  'wrappedMoment1','wrappedMoment2','wrappedMoment3','wrappedMoment4','wrappedMoment5',
   'wrappedTheme',
 ]);
 
@@ -67,6 +70,7 @@ function detectFieldType(varName: string): TemplateVariable['type'] {
   const lower = varName.toLowerCase();
   
   if (lower.includes('date') && !lower.includes('update')) return 'datetime';
+  if (lower.includes('since')) return 'date';
   if (lower.includes('url') || lower.includes('link') || lower.includes('photo') || lower.includes('image')) return 'url';
   if (lower.includes('color') || lower.includes('theme')) return 'color';
   if (lower.includes('number') || lower.includes('count')) return 'number';
@@ -338,7 +342,12 @@ export default function CustomizePage() {
     ? [3,4,5].filter(n => (formData[`wrappedSong${n}`] || '').trim() !== '').length
     : 0;
   const extraSongsPrice = filledExtraSongsCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice;
+  // Per-moment pricing: moments 3-5 cost $0.50 each
+  const filledExtraMomentsCount = formData.enableExtraMoments === 'true'
+    ? [3,4,5].filter(n => (formData[`wrappedMoment${n}`] || '').trim() !== '').length
+    : 0;
+  const extraMomentsPrice = filledExtraMomentsCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -385,6 +394,15 @@ export default function CustomizePage() {
         [3,4,5].forEach(n => {
           if ((formData[`wrappedSong${n}`] || '').trim() !== '') {
             enabledAddons.push({ type: `extraSong${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
+
+      // Add per-moment pricing for extra moments (3-5)
+      if (formData.enableExtraMoments === 'true') {
+        [3,4,5].forEach(n => {
+          if ((formData[`wrappedMoment${n}`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraMoment${n}`, price: ADDON_PRICE });
           }
         });
       }
@@ -828,6 +846,68 @@ export default function CustomizePage() {
                   </div>
                 );
               })()}
+
+              {/* Wrapped Moments Editor - shown for templates with wrappedMoment fields */}
+              {templateVariables.some(v => v.name === 'wrappedMoment1') && (() => {
+                const extraMomentsEnabled = formData.enableExtraMoments === 'true';
+                const maxMoments = extraMomentsEnabled ? 5 : 2;
+                const filledExtra = extraMomentsEnabled
+                  ? [3,4,5].filter(n => (formData[`wrappedMoment${n}`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Top Moments</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraMomentsEnabled ? 'Up to 5 moments' : '2 moments included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Your best memories together (shown as a ranked list)</p>
+                    <div className="space-y-2">
+                      {Array.from({ length: maxMoments }, (_, i) => i + 1).map(num => {
+                        const key = `wrappedMoment${num}`;
+                        const val = formData[key] || '';
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold w-5 shrink-0" style={{color: num <= 2 ? '#a855f7' : '#c084fc'}}>
+                                #{num}
+                              </span>
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={(e) => setFormData(prev => ({ ...prev, [key]: e.target.value }))}
+                                className="flex-1 px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                                placeholder={num === 1 ? 'e.g. That road trip in March' : 'Another great moment...'}
+                                maxLength={80}
+                              />
+                              <span className="text-[10px] text-gray-600 shrink-0">
+                                {num <= 2 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {!extraMomentsEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraMoments: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Moments</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
+                    {extraMomentsEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra moment{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Effect Addons */}
@@ -966,13 +1046,14 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
                         filledExtraSlidesCount > 0 ? `${filledExtraSlidesCount} extra slide${filledExtraSlidesCount > 1 ? 's' : ''}` : '',
                         filledExtraPhotosCount > 0 ? `${filledExtraPhotosCount} extra photo${filledExtraPhotosCount > 1 ? 's' : ''}` : '',
                         filledExtraSongsCount > 0 ? `${filledExtraSongsCount} extra song${filledExtraSongsCount > 1 ? 's' : ''}` : '',
+                        filledExtraMomentsCount > 0 ? `${filledExtraMomentsCount} extra moment${filledExtraMomentsCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>
