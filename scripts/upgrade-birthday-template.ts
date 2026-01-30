@@ -219,6 +219,59 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
       100% { opacity:0; transform: scale(0) translateY(-30px); }
     }
 
+    /* Message overlay card (shown after candles blown) */
+    .msg-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.8);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none;
+      transition: opacity .5s;
+    }
+    .msg-overlay.visible { opacity: 1; pointer-events: auto; }
+    .msg-card {
+      width: 88%; max-width: 380px;
+      opacity: 0;
+      transform: translateY(40px) scale(.85) rotate(-3deg);
+      transition: all .7s cubic-bezier(.34,1.56,.64,1);
+    }
+    .msg-overlay.visible .msg-card {
+      opacity: 1; transform: translateY(0) scale(1) rotate(0);
+    }
+    .msg-card-inner {
+      background: linear-gradient(145deg, #fdf6e3, #f5e6c8);
+      border-radius: 16px; padding: 2rem 1.5rem;
+      position: relative; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3);
+    }
+    .msg-card-inner::before {
+      content:''; position: absolute; inset:0;
+      background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,0,0,.03) 28px,rgba(0,0,0,.03) 29px);
+      pointer-events: none;
+    }
+    .msg-card-inner::after {
+      content:''; position: absolute; top:0; left:0; right:0; height: 4px;
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+    }
+    .msg-card-to {
+      font-size: clamp(1.1rem,4.5vw,1.4rem);
+      font-weight: 700; color: #5f27cd; margin-bottom: .8rem;
+    }
+    .msg-card-body {
+      font-size: clamp(.9rem,3.5vw,1.05rem);
+      line-height: 1.8; color: #2c1810;
+      font-style: italic;
+      word-wrap: break-word; overflow-wrap: break-word;
+    }
+    .msg-card-close {
+      display: block; margin: 1.5rem auto 0;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: #fff; border: none;
+      padding: .7rem 2rem; border-radius: 10px;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer; transition: transform .2s;
+    }
+    .msg-card-close:active { transform: scale(.95); }
+
     @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
     .hidden { display: none !important; }
 
@@ -234,7 +287,6 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
   <div class="content">
     <div class="card">
       <h1>Happy Birthday <span class="emoji">🎂</span><br>{{recipientName}}!</h1>
-      <p class="message" id="customMsg" style="display:none;">{{customMessage}}</p>
 
       <div class="cake-container">
         <div class="candles" id="candles">
@@ -275,6 +327,17 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
   </div>
 
   <div class="balloon-hint">🎈 Drag and throw the balloons!</div>
+
+  <!-- Message overlay (shown after candles blown) -->
+  <div class="msg-overlay" id="msgOverlay">
+    <div class="msg-card">
+      <div class="msg-card-inner">
+        <p class="msg-card-to">Dear {{recipientName}},</p>
+        <p class="msg-card-body">{{customMessage}}</p>
+        <button class="msg-card-close" onclick="document.getElementById('msgOverlay').classList.remove('visible');">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
@@ -551,9 +614,10 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
       document.getElementById('tap-hint').style.display = 'none';
       document.getElementById('result').classList.add('visible');
 
-      // Reveal the custom message
-      var msg = document.getElementById('customMsg');
-      if (msg) { msg.style.display = 'block'; msg.style.animation = 'fadeIn .6s ease-out'; }
+      // Show message card overlay after a short delay
+      setTimeout(function() {
+        document.getElementById('msgOverlay').classList.add('visible');
+      }, 1200);
 
       // Confetti
       if (hasConfetti) spawnConfetti();
