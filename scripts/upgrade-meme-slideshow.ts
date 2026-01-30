@@ -30,11 +30,11 @@ const upgradedMeme = `<!DOCTYPE html>
     @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; } }
 
     h1 {
-      font-size: .85rem; color: #555; text-transform: uppercase;
-      letter-spacing: 0.15em; margin-bottom: 0.4rem;
+      font-size: .75rem; color: #555; text-transform: uppercase;
+      letter-spacing: 0.15em; margin-bottom: 0.3rem;
     }
     .name {
-      font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem;
+      font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;
       background: linear-gradient(135deg, #a855f7, #ec4899);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
@@ -42,19 +42,19 @@ const upgradedMeme = `<!DOCTYPE html>
     .viewer {
       background: rgba(22,22,31,0.8);
       border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 20px; padding: 1.2rem;
-      margin-bottom: 1.2rem;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      border-radius: 16px; padding: .8rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
       transition: opacity .4s;
     }
 
     .media-container {
-      width: 100%; aspect-ratio: 1; border-radius: 14px; overflow: hidden;
+      width: 100%; aspect-ratio: 4/3; border-radius: 10px; overflow: hidden;
       background: #111118; display: flex; align-items: center; justify-content: center;
-      margin-bottom: .8rem; position: relative;
+      margin-bottom: .6rem; position: relative;
     }
     .media-container img, .media-container video {
-      max-width: 100%; max-height: 100%; object-fit: contain;
+      width: 100%; height: 100%; object-fit: cover;
       animation: slideIn .4s ease-out;
     }
     @keyframes slideIn {
@@ -80,8 +80,8 @@ const upgradedMeme = `<!DOCTYPE html>
     }
 
     .caption {
-      color: #bbb; font-size: .95rem; line-height: 1.5;
-      min-height: 2.5rem; padding: 0 .5rem;
+      color: #bbb; font-size: .85rem; line-height: 1.4;
+      min-height: 1.5rem; padding: 0 .5rem;
     }
 
     .controls {
@@ -167,8 +167,10 @@ const upgradedMeme = `<!DOCTYPE html>
 
     var hasExtra = '{{enableExtraSlides}}' === 'true';
 
-    // Filter to only slides that have a URL
-    var slides = slideData.filter(function(s) { return s.url && s.url !== '' && !s.url.match(/^\\{\\{/); });
+    // Filter to only slides with a valid URL (skip empty, placeholders, bracket text)
+    var slides = slideData.filter(function(s) {
+      return s.url && s.url !== '' && !s.url.match(/^\\{\\{/) && !s.url.match(/^\\[/) && s.url.match(/^https?:\\/\\//i);
+    });
 
     // If no slides at all, show a default
     if (slides.length === 0) {

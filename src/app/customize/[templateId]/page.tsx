@@ -33,8 +33,11 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableLuckyNumbers: { label: 'Lucky Numbers', description: 'Add random lucky numbers to the fortune', icon: '🔢' },
   enableFireflies: { label: 'Fireflies', description: 'Warm glowing fireflies float across the night sky', icon: '🪲' },
   enableExtraBottles: { label: 'Extra Bottles', description: 'Two more bottles wash ashore, each with its own message', icon: '🍾' },
-  enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides (images or GIFs)', icon: '🖼️' },
+  enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides ($0.50 each filled)', icon: '🖼️' },
 };
+
+// Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
@@ -215,12 +218,17 @@ export default function CustomizePage() {
     return () => clearTimeout(timer);
   }, [customUrl, wantCustomUrl]);
 
-  // Calculate total price (base + addons + custom URL)
+  // Calculate total price (base + addons + custom URL + per-slide pricing)
   const basePrice = parseFloat(template?.basePrice || '0');
   const customUrlPrice = wantCustomUrl && customUrlStatus === 'available' ? 2.00 : 0;
-  const enabledAddonsCount = availableAddons.filter(a => formData[a] === 'true').length;
+  const enabledAddonsCount = availableAddons.filter(a => formData[a] === 'true' && !FREE_TOGGLE_ADDONS.has(a)).length;
   const addonsPrice = enabledAddonsCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice;
+  // Per-slide pricing: each filled extra slide (2-5) costs $0.50
+  const filledExtraSlidesCount = formData.enableExtraSlides === 'true'
+    ? [2,3,4,5].filter(n => (formData[`memeSlide${n}`] || '').trim() !== '').length
+    : 0;
+  const extraSlidesPrice = filledExtraSlidesCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -241,8 +249,17 @@ export default function CustomizePage() {
     try {
       // Build selected addons array for pricing
       const enabledAddons = availableAddons
-        .filter(a => formData[a] === 'true')
+        .filter(a => formData[a] === 'true' && !FREE_TOGGLE_ADDONS.has(a))
         .map(a => ({ type: a, price: ADDON_PRICE }));
+
+      // Add per-slide pricing for extra filled slides
+      if (formData.enableExtraSlides === 'true') {
+        [2,3,4,5].forEach(n => {
+          if ((formData[`memeSlide${n}`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraSlide${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
 
       // 1. Create the gift
       const response = await fetch('/api/gifts', {
@@ -457,76 +474,62 @@ export default function CustomizePage() {
               {templateVariables.some(v => v.name === 'memeSlide1') && (() => {
                 const extraSlidesEnabled = formData.enableExtraSlides === 'true';
                 const maxSlides = extraSlidesEnabled ? 5 : 1;
+                const filledExtraSlides = extraSlidesEnabled
+                  ? [2,3,4,5].filter(n => (formData[`memeSlide${n}`] || '').trim() !== '').length
+                  : 0;
                 return (
-                  <div className="border-t border-white/5 pt-5 mt-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-white font-semibold text-sm">Meme Slides</h4>
-                      <span className="text-xs text-gray-500">
-                        {extraSlidesEnabled ? 'Up to 5 slides' : '1 slide included'}
-                      </span>
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">GIF Slides</h4>
+                      <a
+                        href="https://giphy.com/search/funny"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-accent-purple hover:text-accent-pink text-xs font-medium transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                        Find GIFs on Giphy
+                      </a>
                     </div>
-                    <div className="space-y-4">
+                    <p className="text-gray-600 text-xs mb-3">Paste a Giphy or image link for each slide</p>
+                    <div className="space-y-2">
                       {Array.from({ length: maxSlides }, (_, i) => i + 1).map(num => {
                         const slideKey = `memeSlide${num}`;
                         const captionKey = `memeCaption${num}`;
                         const slideVal = formData[slideKey] || '';
                         const captionVal = formData[captionKey] || '';
-                        const isGif = slideVal.includes('.gif') || slideVal.includes('giphy.com') || slideVal.includes('.mp4') || slideVal.includes('.webm');
                         return (
-                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-300">
-                                Slide {num}
-                                {num === 1 && <span className="text-gray-600 text-xs ml-2">(included)</span>}
-                                {num > 1 && <span className="text-accent-green text-xs ml-2">+$0.50</span>}
-                              </span>
-                              {isGif && (
-                                <span className="text-xs bg-accent-pink/10 text-accent-pink px-2 py-0.5 rounded-full">GIF/Video</span>
-                              )}
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-xs font-medium text-gray-400 w-6 shrink-0">#{num}</span>
+                              <input
+                                type="url"
+                                value={slideVal}
+                                onChange={(e) => setFormData({ ...formData, [slideKey]: e.target.value })}
+                                className="flex-1 px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-xs"
+                                placeholder="https://media.giphy.com/..."
+                              />
                             </div>
-                            <input
-                              type="url"
-                              value={slideVal}
-                              onChange={(e) => setFormData({ ...formData, [slideKey]: e.target.value })}
-                              className="w-full px-3 py-2.5 bg-dark-900 border border-white/10 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-sm"
-                              placeholder="Paste image URL or Giphy GIF link..."
-                            />
-                            {slideVal && (
-                              <div className="mt-2 rounded-lg overflow-hidden bg-dark-900 max-h-32 flex items-center justify-center">
-                                <img
-                                  src={slideVal}
-                                  alt={`Slide ${num} preview`}
-                                  className="max-h-32 object-contain"
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                />
-                              </div>
-                            )}
-                            <input
-                              type="text"
-                              value={captionVal}
-                              onChange={(e) => setFormData({ ...formData, [captionKey]: e.target.value })}
-                              className="w-full mt-2 px-3 py-2 bg-dark-900 border border-white/10 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-sm"
-                              placeholder={`Caption for slide ${num} (optional)`}
-                              maxLength={100}
-                            />
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 shrink-0"></span>
+                              <input
+                                type="text"
+                                value={captionVal}
+                                onChange={(e) => setFormData({ ...formData, [captionKey]: e.target.value })}
+                                className="flex-1 px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 focus:border-accent-purple/50 outline-none transition-all text-xs"
+                                placeholder="Caption (optional)"
+                                maxLength={100}
+                              />
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-                    {/* Giphy prompt */}
-                    <div className="mt-4 bg-dark-800/30 border border-white/5 rounded-xl p-4 text-center">
-                      <p className="text-gray-400 text-sm mb-2">Need funny GIFs?</p>
-                      <a
-                        href="https://giphy.com/search/funny"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                        Find GIFs on Giphy
-                      </a>
-                      <p className="text-gray-600 text-xs mt-2">Copy the GIF link and paste it above</p>
-                    </div>
+                    {extraSlidesEnabled && filledExtraSlides > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtraSlides * ADDON_PRICE).toFixed(2)} for {filledExtraSlides} extra slide{filledExtraSlides > 1 ? 's' : ''}
+                      </p>
+                    )}
                   </div>
                 );
               })()}
@@ -559,7 +562,9 @@ export default function CustomizePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-accent-green text-xs font-medium">+$0.50</span>
+                          <span className="text-accent-green text-xs font-medium">
+                            {FREE_TOGGLE_ADDONS.has(addonKey) ? 'Free' : '+$0.50'}
+                          </span>
                           <div className={`w-10 h-6 rounded-full transition-all flex items-center ${
                             isEnabled ? 'bg-accent-purple justify-end' : 'bg-dark-700 justify-start'
                           }`}>
@@ -666,10 +671,11 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
+                        filledExtraSlidesCount > 0 ? `${filledExtraSlidesCount} extra slide${filledExtraSlidesCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>
