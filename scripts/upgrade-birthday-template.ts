@@ -517,7 +517,7 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
     var analyser = null;
     var isListening = false;
     var blowStrength = 0;
-    var BLOW_THRESHOLD = 0.4;
+    var BLOW_THRESHOLD = 0.12;
 
     // Tap to blow (always available, default mode)
     function tapCandle(idx) {
@@ -585,7 +585,7 @@ const upgradedBirthdayTemplate = `<!DOCTYPE html>
       for (var i = 0; i < data.length; i++) sum += data[i];
       var avg = sum / data.length / 255;
       document.getElementById('mic-bar').style.height = (avg*100) + '%';
-      blowStrength = blowStrength * 0.8 + avg * 0.2;
+      blowStrength = blowStrength * 0.5 + avg * 0.5;
       if (blowStrength > BLOW_THRESHOLD) blowOutCandle();
       requestAnimationFrame(detectBlow);
     }
