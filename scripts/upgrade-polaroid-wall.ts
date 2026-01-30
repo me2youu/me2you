@@ -160,6 +160,9 @@ const upgradedPolaroid = `<!DOCTYPE html>
     .finale-msg {
       color: #aaa; font-size: 1rem; line-height: 1.8;
       font-style: italic;
+      word-wrap: break-word; overflow-wrap: break-word;
+      white-space: pre-wrap;
+      max-width: 100%;
     }
     .finale-from {
       margin-top: 1rem; color: #555; font-size: .8rem;
