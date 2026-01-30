@@ -31,6 +31,7 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableConfetti: { label: 'Confetti Burst', description: 'Celebrate with a confetti explosion on reveal', icon: '🎉' },
   enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles that float around', icon: '✨' },
   enableLuckyNumbers: { label: 'Lucky Numbers', description: 'Add random lucky numbers to the fortune', icon: '🔢' },
+  enableFireflies: { label: 'Fireflies', description: 'Warm glowing fireflies float across the night sky', icon: '🪲' },
 };
 
 // Smart field type detection based on variable name
