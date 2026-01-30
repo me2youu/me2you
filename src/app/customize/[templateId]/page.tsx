@@ -29,7 +29,8 @@ interface TemplateVariable {
 const ADDON_PRICE = 0.50;
 const ADDON_DETAILS: Record<string, { label: string; description: string; icon: string }> = {
   enableConfetti: { label: 'Confetti Burst', description: 'Celebrate with a confetti explosion on reveal', icon: '🎉' },
-  enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles follow your finger while scratching', icon: '✨' },
+  enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles that float around', icon: '✨' },
+  enableLuckyNumbers: { label: 'Lucky Numbers', description: 'Add random lucky numbers to the fortune', icon: '🔢' },
 };
 
 // Smart field type detection based on variable name
@@ -257,7 +258,7 @@ export default function CustomizePage() {
 
     switch (variable.type) {
       case 'textarea': {
-        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 100;
+        const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500 : 75;
         return (
           <div>
             <textarea
