@@ -95,8 +95,9 @@ function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaption
     setUploading(true);
     try {
       const res = await startUpload([file]);
-      if (res?.[0]?.url) {
-        onPhotoChange(res[0].url);
+      const uploadedUrl = (res?.[0] as any)?.ufsUrl || res?.[0]?.url;
+      if (uploadedUrl) {
+        onPhotoChange(uploadedUrl);
       }
     } catch (err) {
       console.error('Upload failed:', err);
