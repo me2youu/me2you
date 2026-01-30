@@ -670,6 +670,18 @@ export default function CustomizePage() {
                         );
                       })}
                     </div>
+                    {/* Add more photos button */}
+                    {!extraPhotosEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, enableExtraPhotos: 'true' })}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Photos</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
                     {extraPhotosEnabled && filledExtra > 0 && (
                       <p className="text-accent-green text-xs mt-2 text-right">
                         +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra photo{filledExtra > 1 ? 's' : ''}
