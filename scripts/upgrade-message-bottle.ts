@@ -47,10 +47,45 @@ const upgradedBottle = `<!DOCTYPE html>
     .moon-crater:nth-child(2) { width:10px; height:10px; top:50%; left:55%; }
     .moon-crater:nth-child(3) { width:8px; height:8px; top:35%; left:65%; }
 
+    /* Sand */
+    .sand {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 10vh;
+      background: linear-gradient(to bottom, #c2b280 0%, #b0a070 40%, #a0926b 100%);
+      z-index: 3;
+    }
+    .sand::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 15% 30%, rgba(0,0,0,.06) 1px, transparent 1px),
+        radial-gradient(circle at 45% 60%, rgba(0,0,0,.05) 1px, transparent 1px),
+        radial-gradient(circle at 75% 20%, rgba(0,0,0,.06) 1px, transparent 1px),
+        radial-gradient(circle at 30% 80%, rgba(0,0,0,.04) 1px, transparent 1px),
+        radial-gradient(circle at 85% 50%, rgba(0,0,0,.05) 1px, transparent 1px),
+        radial-gradient(circle at 60% 40%, rgba(0,0,0,.04) 1px, transparent 1px);
+      background-size: 8px 8px, 12px 12px, 10px 10px, 7px 7px, 9px 9px, 11px 11px;
+      pointer-events: none;
+    }
+    /* Wet sand line where water meets beach */
+    .sand::after {
+      content: '';
+      position: absolute; top: -4px; left: 0; right: 0;
+      height: 8px;
+      background: linear-gradient(to bottom, rgba(12,74,110,.3), rgba(194,178,128,.6));
+      filter: blur(2px);
+    }
+    /* Sand ripples */
+    .sand-ripple {
+      position: absolute; left: 0; right: 0;
+      height: 2px; border-radius: 50%;
+      background: rgba(0,0,0,.04);
+    }
+
     /* Ocean */
     .ocean {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 42vh;
+      position: fixed; bottom: 9vh; left: 0; right: 0; height: 38vh;
       background: linear-gradient(to bottom, rgba(12,74,110,0) 0%, #0c4a6e 15%, #164e63 60%, #1e3a5f 100%);
+      z-index: 2;
     }
     .wave {
       position: absolute; width: 200%; height: 60px; left: -50%;
@@ -67,7 +102,7 @@ const upgradedBottle = `<!DOCTYPE html>
 
     /* Moon reflection on water */
     .moon-reflect {
-      position: fixed; bottom: 20vh; left: 50%;
+      position: fixed; bottom: 25vh; left: 50%;
       transform: translateX(-50%);
       width: 6px; height: 15vh;
       background: linear-gradient(to bottom, rgba(254,243,199,.15), transparent);
@@ -78,7 +113,7 @@ const upgradedBottle = `<!DOCTYPE html>
     /* Bottle */
     .bottle-wrap {
       position: fixed;
-      bottom: 28vh;
+      bottom: 30vh;
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
@@ -94,6 +129,7 @@ const upgradedBottle = `<!DOCTYPE html>
     }
     .bottle-wrap:hover svg { transform: scale(1.05); }
     .bottle-wrap:active svg { transform: scale(.95); }
+    .bottle-wrap.opened { pointer-events: none; opacity: .4; transform: translateX(-50%) scale(.8); transition: all .6s; }
 
     @keyframes bob {
       0%,100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
@@ -102,19 +138,74 @@ const upgradedBottle = `<!DOCTYPE html>
       75% { transform: translateX(-50%) translateY(-12px) rotate(-1deg); }
     }
 
-    /* Cork pop animation */
-    .bottle-wrap.uncorked { animation: bob 4s ease-in-out infinite; }
+    /* Extra bottles - hidden offscreen initially */
+    .bottle-extra {
+      position: fixed;
+      bottom: 30vh;
+      z-index: 10;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .bottle-extra svg {
+      width: clamp(65px, 18vw, 100px);
+      height: auto;
+      filter: drop-shadow(0 8px 25px rgba(0,0,0,.4));
+      transition: transform .3s;
+    }
+    .bottle-extra:hover svg { transform: scale(1.05); }
+    .bottle-extra:active svg { transform: scale(.95); }
+    .bottle-extra.opened { pointer-events: none; opacity: .4 !important; transform: scale(.8); transition: all .6s; }
+
+    /* Bottle 2: washes in from left */
+    .bottle-extra.wash-left {
+      left: -120px;
+      animation: washFromLeft 2s ease-out forwards, bob2 4s ease-in-out 2s infinite;
+    }
+    @keyframes washFromLeft {
+      0% { left: -120px; opacity: 0; transform: rotate(-20deg); }
+      60% { opacity: 1; transform: rotate(5deg); }
+      80% { left: 28%; transform: rotate(-3deg); }
+      100% { left: 25%; opacity: 1; transform: rotate(-2deg); }
+    }
+    @keyframes bob2 {
+      0%,100% { transform: rotate(-2deg) translateY(0); }
+      25% { transform: rotate(2deg) translateY(-8px); }
+      50% { transform: rotate(-1deg) translateY(-4px); }
+      75% { transform: rotate(3deg) translateY(-10px); }
+    }
+
+    /* Bottle 3: washes in from right */
+    .bottle-extra.wash-right {
+      right: -120px;
+      animation: washFromRight 2s ease-out forwards, bob3 4.5s ease-in-out 2s infinite;
+    }
+    @keyframes washFromRight {
+      0% { right: -120px; opacity: 0; transform: rotate(20deg); }
+      60% { opacity: 1; transform: rotate(-5deg); }
+      80% { right: 28%; transform: rotate(3deg); }
+      100% { right: 25%; opacity: 1; transform: rotate(2deg); }
+    }
+    @keyframes bob3 {
+      0%,100% { transform: rotate(2deg) translateY(0); }
+      25% { transform: rotate(-1deg) translateY(-9px); }
+      50% { transform: rotate(3deg) translateY(-5px); }
+      75% { transform: rotate(-2deg) translateY(-11px); }
+    }
 
     /* Hint */
     .hint {
       position: fixed;
-      bottom: 18vh;
+      bottom: 16vh;
       left: 50%; transform: translateX(-50%);
       color: rgba(255,255,255,.5);
       font-size: .85rem;
-      z-index: 5;
+      z-index: 12;
       animation: pulse 2s ease-in-out infinite;
       transition: opacity .5s;
+      text-align: center;
+      white-space: nowrap;
     }
     @keyframes pulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
 
@@ -150,7 +241,7 @@ const upgradedBottle = `<!DOCTYPE html>
       pointer-events: auto;
     }
 
-    /* Fortune-style paper card */
+    /* Paper card */
     .letter {
       width: 90%;
       max-width: 420px;
@@ -170,14 +261,12 @@ const upgradedBottle = `<!DOCTYPE html>
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.2);
     }
-    /* Paper lines */
     .letter-inner::before {
       content:'';
       position: absolute; inset:0;
       background: repeating-linear-gradient(0deg,transparent,transparent 30px,rgba(0,0,0,.03) 30px,rgba(0,0,0,.03) 31px);
       pointer-events: none;
     }
-    /* Blue top accent (ocean themed) */
     .letter-inner::after {
       content:'';
       position: absolute; top:0; left:0; right:0;
@@ -197,6 +286,13 @@ const upgradedBottle = `<!DOCTYPE html>
       font-style: italic;
       word-wrap: break-word;
       overflow-wrap: break-word;
+    }
+    .letter-count {
+      font-size: .7rem;
+      color: #8b7355;
+      text-align: center;
+      margin-top: 1rem;
+      opacity: .6;
     }
     .letter-close {
       display: block;
@@ -255,16 +351,22 @@ const upgradedBottle = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <!-- Stars generated by JS -->
   <div class="stars" id="stars"></div>
 
-  <!-- Moon -->
   <div class="moon">
     <div class="moon-crater"></div>
     <div class="moon-crater"></div>
     <div class="moon-crater"></div>
   </div>
   <div class="moon-reflect"></div>
+
+  <!-- Sand beach -->
+  <div class="sand">
+    <div class="sand-ripple" style="top:25%;left:10%;width:60px;"></div>
+    <div class="sand-ripple" style="top:50%;left:40%;width:80px;"></div>
+    <div class="sand-ripple" style="top:70%;left:65%;width:50px;"></div>
+    <div class="sand-ripple" style="top:35%;left:80%;width:45px;"></div>
+  </div>
 
   <!-- Ocean waves -->
   <div class="ocean">
@@ -273,13 +375,23 @@ const upgradedBottle = `<!DOCTYPE html>
     <div class="wave"></div>
   </div>
 
-  <!-- Bottle -->
-  <div class="bottle-wrap" id="bottle" onclick="openBottle()">
-    ${BOTTLE_SVG}
+  <!-- Bottle 1 (always visible) -->
+  <div class="bottle-wrap" id="bottle1" onclick="openBottle(1)">
+    \${BOTTLE_SVG}
+  </div>
+
+  <!-- Bottle 2 (extra - hidden until bottle 1 is closed) -->
+  <div class="bottle-extra" id="bottle2" onclick="openBottle(2)">
+    \${BOTTLE_SVG}
+  </div>
+
+  <!-- Bottle 3 (extra - hidden until bottle 2 is closed) -->
+  <div class="bottle-extra" id="bottle3" onclick="openBottle(3)">
+    \${BOTTLE_SVG}
   </div>
 
   <p class="hint" id="hint">
-    <span class="hint-tap" style="display:inline-block;animation:pulse 1.2s ease-in-out infinite;">&#9757;</span>
+    <span style="display:inline-block;animation:pulse 1.2s ease-in-out infinite;">&#9757;</span>
     Tap the bottle
   </p>
 
@@ -288,8 +400,9 @@ const upgradedBottle = `<!DOCTYPE html>
     <div class="letter">
       <div class="letter-inner">
         <p class="letter-to">Dear {{recipientName}},</p>
-        <p class="letter-msg">{{customMessage}}</p>
-        <button class="letter-close" onclick="closeLetter()">Close</button>
+        <p class="letter-msg" id="letterMsg">{{customMessage}}</p>
+        <p class="letter-count" id="letterCount"></p>
+        <button class="letter-close" id="closeBtn" onclick="closeLetter()">Close</button>
       </div>
     </div>
   </div>
@@ -297,11 +410,20 @@ const upgradedBottle = `<!DOCTYPE html>
   <div id="confetti"></div>
 
   <script>
-    var opened = false;
     var hasConfetti = '{{enableConfetti}}' === 'true';
     var hasSparkles = '{{enableSparkles}}' === 'true';
     var hasFireflies = '{{enableFireflies}}' === 'true';
+    var hasExtraBottles = '{{enableExtraBottles}}' === 'true';
     var hasHaptics = 'vibrate' in navigator;
+
+    var messages = [
+      '{{customMessage}}',
+      '{{customMessage2}}',
+      '{{customMessage3}}'
+    ];
+    var totalBottles = hasExtraBottles ? 3 : 1;
+    var currentBottle = 0; // 0-indexed: which bottle we are about to open
+    var bottlesOpened = 0;
 
     // Generate stars
     (function() {
@@ -338,13 +460,14 @@ const upgradedBottle = `<!DOCTYPE html>
       }
     }
 
-    // Sparkles around bottle
+    // Sparkles around active bottle
     if (hasSparkles) {
       setInterval(function() {
-        if (opened) return;
-        var el = document.getElementById('bottle');
-        if (!el) return;
+        var id = 'bottle' + (currentBottle + 1);
+        var el = document.getElementById(id);
+        if (!el || el.classList.contains('opened')) return;
         var r = el.getBoundingClientRect();
+        if (r.width === 0) return;
         var s = document.createElement('div');
         s.className = 'spark';
         s.style.left = (r.left + Math.random()*r.width)+'px';
@@ -357,27 +480,42 @@ const upgradedBottle = `<!DOCTYPE html>
       }, 350);
     }
 
-    function openBottle() {
-      if (opened) {
-        document.getElementById('overlay').classList.add('visible');
-        return;
-      }
-      opened = true;
-
-      if (hasHaptics) navigator.vibrate([20,20,40]);
-
-      // Pop cork - create flying cork element
-      var b = document.getElementById('bottle');
-      var r = b.getBoundingClientRect();
+    function popCork(bottleEl) {
+      var r = bottleEl.getBoundingClientRect();
       var cork = document.createElement('div');
       cork.className = 'cork-pop';
       cork.style.left = (r.left + r.width/2 - 10) + 'px';
       cork.style.top = (r.top) + 'px';
       document.body.appendChild(cork);
       setTimeout(function() { cork.remove(); }, 900);
+    }
+
+    function openBottle(num) {
+      if (num !== currentBottle + 1) return; // Only allow opening the current bottle in sequence
+
+      var bottleEl = document.getElementById('bottle' + num);
+      if (!bottleEl || bottleEl.classList.contains('opened')) return;
+
+      if (hasHaptics) navigator.vibrate([20,20,40]);
+
+      // Pop cork
+      popCork(bottleEl);
+
+      // Mark bottle as opened visually
+      bottleEl.classList.add('opened');
+      bottlesOpened++;
 
       // Hide hint
       document.getElementById('hint').style.opacity = '0';
+
+      // Update letter content
+      var msg = messages[num - 1] || '';
+      document.getElementById('letterMsg').textContent = msg;
+
+      // Show bottle count if extra bottles
+      if (totalBottles > 1) {
+        document.getElementById('letterCount').textContent = 'Bottle ' + num + ' of ' + totalBottles;
+      }
 
       // Show letter after cork pops
       setTimeout(function() {
@@ -388,6 +526,32 @@ const upgradedBottle = `<!DOCTYPE html>
 
     function closeLetter() {
       document.getElementById('overlay').classList.remove('visible');
+
+      // If extra bottles enabled and there are more bottles, wash the next one ashore
+      if (hasExtraBottles && bottlesOpened < totalBottles) {
+        currentBottle = bottlesOpened;
+        var nextNum = currentBottle + 1;
+
+        setTimeout(function() {
+          var nextBottle = document.getElementById('bottle' + nextNum);
+          if (!nextBottle) return;
+
+          // Alternate wash direction
+          if (nextNum === 2) {
+            nextBottle.classList.add('wash-left');
+          } else {
+            nextBottle.classList.add('wash-right');
+          }
+          nextBottle.style.pointerEvents = 'auto';
+
+          // Show hint for next bottle
+          setTimeout(function() {
+            var hint = document.getElementById('hint');
+            hint.textContent = nextNum === 2 ? 'Another bottle washed ashore!' : 'One more bottle!';
+            hint.style.opacity = '1';
+          }, 1200);
+        }, 600);
+      }
     }
 
     function launchConfetti() {
@@ -426,7 +590,7 @@ async function main() {
       .update(templates)
       .set({
         htmlTemplate: upgradedBottle,
-        description: 'A bottle floating on a moonlit ocean. Tap to uncork and read the letter inside. Features fireflies, sparkles, and confetti addons!',
+        description: 'A bottle floating on a moonlit ocean with sandy beach. Tap to uncork and read the letter inside. Add extra bottles that wash ashore with their own messages!',
       })
       .where(eq(templates.name, 'Message in a Bottle'));
     console.log('Updated Message in a Bottle template');

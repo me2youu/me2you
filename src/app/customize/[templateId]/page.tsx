@@ -32,6 +32,12 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableSparkles: { label: 'Sparkle Trail', description: 'Glitter particles that float around', icon: '✨' },
   enableLuckyNumbers: { label: 'Lucky Numbers', description: 'Add random lucky numbers to the fortune', icon: '🔢' },
   enableFireflies: { label: 'Fireflies', description: 'Warm glowing fireflies float across the night sky', icon: '🪲' },
+  enableExtraBottles: { label: 'Extra Bottles', description: 'Two more bottles wash ashore, each with its own message', icon: '🍾' },
+};
+
+// Fields that should only be visible when a specific addon is enabled
+const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
+  enableExtraBottles: ['customMessage2', 'customMessage3'],
 };
 
 // Smart field type detection based on variable name
@@ -405,15 +411,25 @@ export default function CustomizePage() {
             )}
 
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-              {templateVariables.map((variable) => (
-                <div key={variable.name}>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                    {variable.label}
-                    {variable.required && <span className="text-accent-pink ml-1">*</span>}
-                  </label>
-                  {renderField(variable)}
-                </div>
-              ))}
+              {templateVariables.map((variable) => {
+                // Check if this field depends on an addon being enabled
+                const dependentAddon = Object.entries(ADDON_DEPENDENT_FIELDS).find(
+                  ([, fields]) => fields.includes(variable.name)
+                );
+                if (dependentAddon && formData[dependentAddon[0]] !== 'true') {
+                  return null; // Hide field when its addon is off
+                }
+
+                return (
+                  <div key={variable.name}>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                      {variable.label}
+                      {variable.required && <span className="text-accent-pink ml-1">*</span>}
+                    </label>
+                    {renderField(variable)}
+                  </div>
+                );
+              })}
 
               {templateVariables.length === 0 && (
                 <p className="text-gray-600 text-sm text-center py-8">
