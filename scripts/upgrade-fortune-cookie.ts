@@ -10,9 +10,7 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
   <title>Fortune for {{recipientName}}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      width: 100%; height: 100%;
-    }
+    html, body { width: 100%; height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(145deg, #0a0a0f 0%, #1a1028 50%, #0f0f1a 100%);
@@ -76,21 +74,12 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       50% { background-position:100% 50%; }
     }
 
-    /* Cookie area */
-    .cookie-area {
-      position: relative;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    /* Cookie image - uses the openclipart fortune cookie SVG */
+    /* Cookie button */
     .cookie-btn {
       background: none; border: none; padding: 0;
       cursor: pointer; outline: none;
       display: block;
+      margin: 0 auto 1rem;
       transition: transform .3s;
       -webkit-tap-highlight-color: transparent;
     }
@@ -106,7 +95,7 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       50% { transform: scale(.9) rotate(4deg); opacity:.7; }
       100% { transform: scale(.6) rotate(0); opacity:0; }
     }
-    .cookie-img {
+    .cookie-btn svg {
       width: clamp(140px, 40vw, 200px);
       height: auto;
       filter: drop-shadow(0 12px 30px rgba(196,144,62,.4));
@@ -128,64 +117,58 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       50% { transform: translateY(-5px); }
     }
 
-    /* Fortune reveal area - scroll + paper */
-    .fortune-area {
-      position: relative;
+    /* Fortune paper card */
+    .fortune {
       width: 100%;
+      padding: 0 .5rem;
       opacity: 0;
-      transform: translateY(30px) scaleY(.3);
+      transform: translateY(30px) scaleY(.2);
       transition: all .8s cubic-bezier(.34,1.56,.64,1);
       pointer-events: none;
     }
-    .fortune-area.show {
+    .fortune.show {
       opacity: 1;
       transform: translateY(0) scaleY(1);
       pointer-events: auto;
     }
-
-    /* Scroll SVG as background image */
-    .scroll-wrap {
+    .fortune-inner {
+      background: linear-gradient(145deg, #fdf6e3, #f5e6c8);
+      border-radius: 14px;
+      padding: 1.5rem 1.25rem;
       position: relative;
-      width: 100%;
-      max-width: 360px;
-      margin: 0 auto;
-    }
-    .scroll-img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    /* Fortune text overlaid on the scroll */
-    .fortune-overlay {
-      position: absolute;
-      top: 34%;
-      left: 15%;
-      right: 15%;
-      bottom: 5%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.2);
+    }
+    /* Paper lines */
+    .fortune-inner::before {
+      content:'';
+      position: absolute; inset:0;
+      background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,0,0,.03) 28px,rgba(0,0,0,.03) 29px);
+      pointer-events: none;
+    }
+    /* Red top accent */
+    .fortune-inner::after {
+      content:'';
+      position: absolute; top:0; left:0; right:0;
+      height: 3px;
+      background: linear-gradient(90deg,#d4453b,#c0392b);
     }
     .fortune-text {
-      font-size: clamp(.85rem, 3.5vw, 1.1rem);
-      line-height: 1.6;
-      color: #3a2a18;
+      font-size: clamp(1rem,4vw,1.2rem);
+      line-height: 1.7;
+      color: #2c1810;
       font-style: italic;
       text-align: center;
       word-wrap: break-word;
       overflow-wrap: break-word;
-      padding: 0 .25rem;
     }
-    .q { color: #c0392b; font-size: 1.3rem; font-style: normal; vertical-align: -3px; }
+    .q { color: #d4453b; font-size: 1.5rem; font-style: normal; vertical-align: -4px; }
 
     /* Lucky numbers */
-    .lucky { display: none; margin-top: .5rem; }
+    .lucky { display: none; margin-top: 1rem; padding-top: .75rem; border-top: 1px dashed rgba(0,0,0,.1); }
     .lucky.show { display: block; }
-    .lucky-label { text-transform: uppercase; font-size: .6rem; color: #8b7355; letter-spacing: 1px; font-weight: 600; }
-    .lucky-nums { font-weight: 700; color: #c0392b; font-size: .75rem; margin-top: .15rem; letter-spacing: 2px; }
+    .lucky-label { text-transform: uppercase; font-size: .7rem; color: #8b7355; letter-spacing: 1px; font-weight: 600; }
+    .lucky-nums { font-weight: 700; color: #d4453b; font-size: .85rem; margin-top: .2rem; letter-spacing: 3px; }
 
     /* Crumbs */
     .crumb {
@@ -233,27 +216,32 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       <h1 class="name">{{recipientName}}</h1>
     </div>
 
-    <div class="cookie-area">
-      <button class="cookie-btn" id="cookie" onclick="crack()" aria-label="Crack the cookie">
-        <img class="cookie-img" src="https://me2you.world/images/fortune-cookie/cookie.svg" alt="Fortune Cookie" />
-      </button>
-    </div>
+    <button class="cookie-btn" id="cookie" onclick="crack()" aria-label="Crack the cookie">
+      <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+        <g id="color">
+          <rect x="17.3962" y="28.2404" width="8.5369" height="17.1843" transform="matrix(0.5359, -0.8443, 0.8443, 0.5359, -21.0425, 35.3858)" fill="#d0cfce"/>
+          <path fill="#fcea2b" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055A43.3575,43.3575,0,0,0,33,37"/>
+          <path fill="#f1b31c" d="M49.8957,20.9907a19.2835,19.2835,0,0,0-12.2606-2.9385,19.1877,19.1877,0,0,1,8.5782,2.9385,19.3518,19.3518,0,0,1-8.668,35.6183,19.3707,19.3707,0,0,0,12.35-35.6183Z"/>
+        </g>
+        <g id="line">
+          <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M38.0889,37.0473a25.4023,25.4023,0,0,0-5.68,1.2274,29.259,29.259,0,0,0-10.8,7.09l-.005.0055c-.0782.0857-.236.26-.242.269a14.5063,14.5063,0,0,0,2.3722,2.8561A19.3988,19.3988,0,1,0,25.5228,23.95a20.1316,20.1316,0,0,0-4.1612,4.5053c.006.0091.1638.1832.242.269l.005.0055C26.1318,33.6782,34,37,34,37"/>
+          <polyline fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="17.847 38.124 12.73 34.876 16.116 29.541 24.294 34.732"/>
+        </g>
+      </svg>
+    </button>
 
     <p class="hint" id="hint">
       <span class="hint-tap">&#9757;</span> Tap to crack open
     </p>
 
-    <div class="fortune-area" id="fortune">
-      <div class="scroll-wrap">
-        <img class="scroll-img" src="https://me2you.world/images/fortune-cookie/scroll.svg" alt="Fortune scroll" />
-        <div class="fortune-overlay">
-          <p class="fortune-text">
-            <span class="q">&ldquo;</span>{{customMessage}}<span class="q">&rdquo;</span>
-          </p>
-          <div class="lucky" id="lucky">
-            <p class="lucky-label">Lucky Numbers</p>
-            <p class="lucky-nums" id="lucky-nums"></p>
-          </div>
+    <div class="fortune" id="fortune">
+      <div class="fortune-inner">
+        <p class="fortune-text">
+          <span class="q">&ldquo;</span>{{customMessage}}<span class="q">&rdquo;</span>
+        </p>
+        <div class="lucky" id="lucky">
+          <p class="lucky-label">Lucky Numbers</p>
+          <p class="lucky-nums" id="lucky-nums"></p>
         </div>
       </div>
     </div>
@@ -262,11 +250,11 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
   <div id="confetti"></div>
 
   <script>
-    let done = false;
-    const hasConfetti = '{{enableConfetti}}' === 'true';
-    const hasLucky = '{{enableLuckyNumbers}}' === 'true';
-    const hasSparkles = '{{enableSparkles}}' === 'true';
-    const hasHaptics = 'vibrate' in navigator;
+    var done = false;
+    var hasConfetti = '{{enableConfetti}}' === 'true';
+    var hasLucky = '{{enableLuckyNumbers}}' === 'true';
+    var hasSparkles = '{{enableSparkles}}' === 'true';
+    var hasHaptics = 'vibrate' in navigator;
 
     // Sparkles around cookie before cracking
     if (hasSparkles) {
@@ -291,13 +279,11 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       if (done) return;
       done = true;
 
-      // Haptic feedback
       if (hasHaptics) navigator.vibrate([30,30,60]);
 
-      // Crack animation
       document.getElementById('cookie').classList.add('cracked');
 
-      // Crumbs fly out
+      // Crumbs
       var btn = document.getElementById('cookie');
       var r = btn.getBoundingClientRect();
       var cx = r.left + r.width/2, cy = r.top + r.height/2;
@@ -316,14 +302,11 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
         setTimeout(function(el) { el.remove(); }, 1200, c);
       }
 
-      // Hide hint
       document.getElementById('hint').style.opacity = '0';
 
-      // Show fortune after cookie fades
       setTimeout(function() {
         document.getElementById('fortune').classList.add('show');
 
-        // Lucky numbers
         if (hasLucky) {
           var nums = [];
           while (nums.length < 6) {
@@ -335,7 +318,6 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
           document.getElementById('lucky').classList.add('show');
         }
 
-        // Confetti rain
         if (hasConfetti) launchConfetti();
       }, 600);
     }
@@ -376,7 +358,7 @@ async function main() {
       .update(templates)
       .set({
         htmlTemplate: upgradedFortuneCookie,
-        description: 'Crack open a fortune cookie to reveal a personalized message on a scroll. Features crumbs, lucky numbers, sparkles, and confetti addons!',
+        description: 'Crack open a fortune cookie to reveal a personalized message. Features crumbs, lucky numbers, sparkles, and confetti addons!',
       })
       .where(eq(templates.name, 'Fortune Cookie'));
     console.log('Updated Fortune Cookie template');
