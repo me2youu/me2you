@@ -37,16 +37,18 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableExtraSlides: { label: 'Extra Slides', description: 'Add up to 4 more meme slides ($0.50 each filled)', icon: '🖼️' },
   enableMicBlow: { label: 'Mic Blow', description: 'Blow into the microphone to extinguish candles!', icon: '🎤' },
   enableExtraPhotos: { label: 'Extra Photos', description: 'Add up to 6 more photos ($0.50 each)', icon: '📸' },
+  enableExtraSongs: { label: 'Extra Songs', description: 'Add up to 3 more songs to your top 5 ($0.50 each)', icon: '🎵' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
-const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos']);
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraBottles: ['customMessage2', 'customMessage3'],
   enableExtraSlides: ['memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5'],
   enableExtraPhotos: ['polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8'],
+  enableExtraSongs: ['wrappedSong3','wrappedArtist3','wrappedSong4','wrappedArtist4','wrappedSong5','wrappedArtist5'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
@@ -55,6 +57,8 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'memeCaption1', 'memeCaption2', 'memeCaption3', 'memeCaption4', 'memeCaption5',
   'polaroidPhoto1','polaroidPhoto2','polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8',
   'polaroidCaption1','polaroidCaption2','polaroidCaption3','polaroidCaption4','polaroidCaption5','polaroidCaption6','polaroidCaption7','polaroidCaption8',
+  'wrappedSong1','wrappedSong2','wrappedSong3','wrappedSong4','wrappedSong5',
+  'wrappedArtist1','wrappedArtist2','wrappedArtist3','wrappedArtist4','wrappedArtist5',
 ]);
 
 // Smart field type detection based on variable name
@@ -326,7 +330,12 @@ export default function CustomizePage() {
     ? [3,4,5,6,7,8].filter(n => (formData[`polaroidPhoto${n}`] || '').trim() !== '').length
     : 0;
   const extraPhotosPrice = filledExtraPhotosCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice;
+  // Per-song pricing: songs 3-5 cost $0.50 each when extra songs addon is on
+  const filledExtraSongsCount = formData.enableExtraSongs === 'true'
+    ? [3,4,5].filter(n => (formData[`wrappedSong${n}`] || '').trim() !== '').length
+    : 0;
+  const extraSongsPrice = filledExtraSongsCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -364,6 +373,15 @@ export default function CustomizePage() {
         [3,4,5,6,7,8].forEach(n => {
           if ((formData[`polaroidPhoto${n}`] || '').trim() !== '') {
             enabledAddons.push({ type: `extraPhoto${n}`, price: ADDON_PRICE });
+          }
+        });
+      }
+
+      // Add per-song pricing for extra songs (3-5)
+      if (formData.enableExtraSongs === 'true') {
+        [3,4,5].forEach(n => {
+          if ((formData[`wrappedSong${n}`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraSong${n}`, price: ADDON_PRICE });
           }
         });
       }
@@ -696,6 +714,84 @@ export default function CustomizePage() {
                   </div>
                 );
               })()}
+
+              {/* Wrapped Song Editor - shown for templates with wrappedSong fields */}
+              {templateVariables.some(v => v.name === 'wrappedSong1') && (() => {
+                const extraSongsEnabled = formData.enableExtraSongs === 'true';
+                const maxSongs = extraSongsEnabled ? 5 : 2;
+                const filledExtra = extraSongsEnabled
+                  ? [3,4,5].filter(n => (formData[`wrappedSong${n}`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Top Songs</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraSongsEnabled ? 'Up to 5 songs' : '2 songs included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Add your top songs together</p>
+                    <div className="space-y-2">
+                      {Array.from({ length: maxSongs }, (_, i) => i + 1).map(num => {
+                        const songKey = `wrappedSong${num}`;
+                        const artistKey = `wrappedArtist${num}`;
+                        const songVal = formData[songKey] || '';
+                        const artistVal = formData[artistKey] || '';
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-xs font-bold w-5 shrink-0" style={{color: num <= 2 ? '#1db954' : '#1ed760'}}>
+                                #{num}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <input
+                                  type="text"
+                                  value={songVal}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, [songKey]: e.target.value }))}
+                                  className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                                  placeholder="Song name"
+                                  maxLength={60}
+                                />
+                              </div>
+                              <span className="text-[10px] text-gray-600 shrink-0">
+                                {num <= 2 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 shrink-0"></span>
+                              <input
+                                type="text"
+                                value={artistVal}
+                                onChange={(e) => setFormData(prev => ({ ...prev, [artistKey]: e.target.value }))}
+                                className="flex-1 px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                                placeholder="Artist name"
+                                maxLength={60}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Add more songs button */}
+                    {!extraSongsEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraSongs: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Songs</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
+                    {extraSongsEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra song{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Effect Addons */}
@@ -834,12 +930,13 @@ export default function CustomizePage() {
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
                         filledExtraSlidesCount > 0 ? `${filledExtraSlidesCount} extra slide${filledExtraSlidesCount > 1 ? 's' : ''}` : '',
                         filledExtraPhotosCount > 0 ? `${filledExtraPhotosCount} extra photo${filledExtraPhotosCount > 1 ? 's' : ''}` : '',
+                        filledExtraSongsCount > 0 ? `${filledExtraSongsCount} extra song${filledExtraSongsCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>
