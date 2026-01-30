@@ -377,17 +377,17 @@ const upgradedBottle = `<!DOCTYPE html>
 
   <!-- Bottle 1 (always visible) -->
   <div class="bottle-wrap" id="bottle1" onclick="openBottle(1)">
-    \${BOTTLE_SVG}
+    ${BOTTLE_SVG}
   </div>
 
   <!-- Bottle 2 (extra - hidden until bottle 1 is closed) -->
   <div class="bottle-extra" id="bottle2" onclick="openBottle(2)">
-    \${BOTTLE_SVG}
+    ${BOTTLE_SVG}
   </div>
 
   <!-- Bottle 3 (extra - hidden until bottle 2 is closed) -->
   <div class="bottle-extra" id="bottle3" onclick="openBottle(3)">
-    \${BOTTLE_SVG}
+    ${BOTTLE_SVG}
   </div>
 
   <p class="hint" id="hint">

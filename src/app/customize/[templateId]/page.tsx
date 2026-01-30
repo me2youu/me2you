@@ -57,7 +57,9 @@ function detectFieldType(varName: string): TemplateVariable['type'] {
 function formatLabel(varName: string): string {
   return varName
     .replace(/([A-Z])/g, ' $1')
+    .replace(/(\d+)/g, ' $1')
     .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
     .replace(/\b\w/g, l => l.toUpperCase())
     .trim();
 }
@@ -131,9 +133,12 @@ export default function CustomizePage() {
         // recipientName always first
         if (a.name === 'recipientName') return -1;
         if (b.name === 'recipientName') return 1;
-        // customMessage typically last
-        if (a.name === 'customMessage') return 1;
-        if (b.name === 'customMessage') return -1;
+        // customMessage* fields go at the end, in natural order (1, 2, 3)
+        const aIsMsg = a.name.startsWith('customMessage');
+        const bIsMsg = b.name.startsWith('customMessage');
+        if (aIsMsg && bIsMsg) return a.name.localeCompare(b.name, undefined, { numeric: true });
+        if (aIsMsg) return 1;
+        if (bIsMsg) return -1;
         return a.label.localeCompare(b.label);
       });
   };
