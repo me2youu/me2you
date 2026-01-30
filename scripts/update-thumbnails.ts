@@ -12,7 +12,7 @@ const thumbnailMap: Record<string, string> = {
   'Yes or No': '/images/templates/6-yes-no.jpg',
   'Countdown Timer': '/images/templates/7-countdown-timer.jpg',
   'Wrapped': '/images/templates/8-spotify-wrapped.jpg',
-  'Birthday Bash': '/images/templates/24-birthday-bash.jpg',
+  'Birthday Bash': '/images/templates/24-birthday-bash.png',
   'Simple Valentine': '/images/templates/10-simple-valentine.jpg',
   '3D Memory Room': '/images/templates/11-3d-memory-room.jpg',
   'Memory Room Adventure': '/images/templates/12-memory-room-adventure.jpg',
