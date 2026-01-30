@@ -1,0 +1,113 @@
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+html {
+  background: no-repeat center center fixed url("https://raw.githubusercontent.com/hongyi0220/the-fortune-cookie/master/background.png");
+  background-size: cover;
+}
+.container {
+  width: 100%;
+  height: 100%;
+}
+h1 {
+  font-family: 'Mogra', cursive;
+  text-align: center;
+  font-size: 2rem;
+  margin-top: 5%;
+}
+#scrwhole {
+  position: relative;
+ margin: 10%;
+  height: 400px;
+}
+#scroll {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%);
+  width: 50%;
+  z-index: 1;
+  max-width: 350px;
+  min-width: 270px;
+  top: 0;
+}
+p{
+  font-family: 'Mogra', cursive;
+  padding-top: 15%;
+}
+#box {
+  overflow-y: scroll;
+  transform-origin: 0 top;
+  position: absolute;
+  max-height: 300px;
+  width: 40%;
+  max-width: 290px;
+  min-width: 210px;
+  left: 50%;
+  transform: translate(-50%);
+  background-color: rgb(251, 244, 204);
+  border: 5px solid rgb(191, 182, 136);
+  top: 32%;
+  }
+.box-animate {
+  animation: boxAnimate 1s  
+}
+@keyframes boxAnimate {
+  from {
+    
+  }
+  to {
+ 
+  }
+}
+#cookie {
+  display: inline-block;
+  width: 160px;
+  cursor: pointer;
+  cursor: hand;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: transfrom 0.5s;
+  -webkit-transition: transform 0.5s;
+}
+#cookie:hover {
+  transform: translate(-50%, -40%);
+  -webkit-transform: translateY(-50%, -40%);
+}
+#box:hover {
+  opacity: 1;
+  cursor: pointer;
+  cursor: hand;
+}
+#talk {
+  position: relative;
+  display: inline-block;
+ font-family: 'Gloria Hallelujah', cursive;
+  font-size: 25px;
+  left: 45%;
+  bottom: 4rem;
+  margin-left: 1%;
+  transform: translateX(-50%);
+}
+#twitter {
+  font-size: 1.5rem;
+  display: inline-block;
+  position: relative;
+  left: 30%;
+  color: maroon;
+}
+#twitter:visited {
+  color: white;
+}
+footer {
+  margin-bottom: 1%;
+  text-align: center;
+}
+
+@media only screen and  (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+  

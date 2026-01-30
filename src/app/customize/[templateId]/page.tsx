@@ -149,10 +149,16 @@ export default function CustomizePage() {
 
     let html = template.htmlTemplate;
 
-    // Replace all variables
+    // Replace all regular variables
     templateVariables.forEach(v => {
       const value = formData[v.name] || '';
       html = html.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), value || `[${v.label}]`);
+    });
+
+    // Replace addon variables (enable* toggles) so preview shows confetti/sparkles/etc
+    availableAddons.forEach(addonKey => {
+      const value = formData[addonKey] || 'false';
+      html = html.replace(new RegExp(`\\{\\{${addonKey}\\}\\}`, 'g'), value);
     });
 
     if (template.cssTemplate) {
