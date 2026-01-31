@@ -79,12 +79,13 @@ const CUSTOM_EDITOR_FIELDS = new Set([
 function detectFieldType(varName: string): TemplateVariable['type'] {
   const lower = varName.toLowerCase();
   
+  if (lower === 'letterdate') return 'text'; // "January 15, 2025" style, not a date picker
   if (lower.includes('date') && !lower.includes('update')) return 'datetime';
   if (lower.includes('since')) return 'date';
   if (lower.includes('url') || lower.includes('link') || lower.includes('photo') || lower.includes('image')) return 'url';
   if (lower.includes('color') || lower.includes('theme')) return 'color';
   if (lower.includes('number') || lower.includes('count')) return 'number';
-  if (lower.includes('message') || lower.includes('letter') || lower.includes('description') || lower.includes('caption')) return 'textarea';
+  if (lower.includes('message') || lower.includes('letter') || lower.includes('description') || lower.includes('caption') || lower.includes('paragraph')) return 'textarea';
   
   return 'text';
 }
@@ -484,15 +485,20 @@ export default function CustomizePage() {
     switch (variable.type) {
       case 'textarea': {
         const maxLen = variable.name.includes('letter') || variable.name.includes('final') ? 500
+          : variable.name.includes('paragraph') ? 300
           : variable.name.includes('Description') || variable.name.includes('Desc') ? 200
+          : variable.name === 'customMessage' ? 150
           : 75;
+        const rows = variable.name.includes('final') || variable.name.includes('letter') ? 5
+          : variable.name.includes('paragraph') ? 4
+          : 3;
         return (
           <div>
             <textarea
               value={value}
               onChange={(e) => { if (e.target.value.length <= maxLen) onChange(e.target.value); }}
               className={`${baseClass} resize-none`}
-              rows={variable.name.includes('final') || variable.name.includes('letter') ? 5 : 3}
+              rows={rows}
               placeholder={variable.placeholder || `Enter ${variable.label.toLowerCase()}...`}
               maxLength={maxLen}
             />
@@ -556,7 +562,11 @@ export default function CustomizePage() {
         );
 
       default: {
-        const textMax = variable.name.includes('Title') || variable.name.includes('title') ? 40 : 80;
+        const textMax = variable.name.includes('highlight') ? 50
+          : variable.name === 'senderName' ? 30
+          : variable.name === 'letterDate' ? 20
+          : variable.name.includes('Title') || variable.name.includes('title') ? 40
+          : 80;
         return (
           <input
             type="text"

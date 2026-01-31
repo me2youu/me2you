@@ -16,10 +16,10 @@ const thumbnailMap: Record<string, string> = {
   'Simple Valentine': '/images/templates/10-simple-valentine.jpg',
   '3D Memory Room': '/images/templates/11-3d-memory-room.jpg',
   'Memory Room Adventure': '/images/templates/12-memory-room-adventure.jpg',
-  'Thank You Card': '/images/templates/13-thank-you-card.jpg',
+  // Thank You Card deleted
   'The Receipt': '/images/templates/14-the-reciept.jpg',
   'Code Repository': '/images/templates/15-github-repo.jpg',
-  'Love Letter': '/images/templates/16-love-letter.jpg',
+  'Personal Letter': '/images/templates/16-love-letter.jpg',
   'Virtual Pet': '/images/templates/17-virtual-pet.jpg',
   'Streaming Service': '/images/templates/18-streaming-service.jpg',
   'Exploding Gift Box': '/images/templates/19-exploding-gift-box.jpg',
