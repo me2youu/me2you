@@ -73,6 +73,10 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'top1','top2','top3',
   'heroImageUrl',
   'showTitle','showDescription','showYear',
+  'location1Title','location1Date','location1Caption','location1Desc','location1Emoji','location1Image',
+  'location2Title','location2Date','location2Caption','location2Desc','location2Emoji','location2Image',
+  'location3Title','location3Date','location3Caption','location3Desc','location3Emoji','location3Image',
+  'location4Title','location4Date','location4Caption','location4Desc','location4Emoji','location4Image',
 ]);
 
 // Smart field type detection based on variable name
@@ -1181,6 +1185,129 @@ export default function CustomizePage() {
                         +$0.50 for 1 extra item
                       </p>
                     )}
+                  </div>
+                );
+              })()}
+
+              {/* Location Editor - shown for Adventure Map templates */}
+              {templateVariables.some(v => v.name === 'location1Title') && (() => {
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <h4 className="text-white font-semibold text-sm mb-2">Locations</h4>
+                    <p className="text-gray-600 text-xs mb-3">Each pin is a place or memory on your adventure map — all 4 included</p>
+                    <div className="space-y-3">
+                      {[1,2,3,4].map(num => {
+                        const titleKey = `location${num}Title`;
+                        const dateKey = `location${num}Date`;
+                        const captionKey = `location${num}Caption`;
+                        const descKey = `location${num}Desc`;
+                        const emojiKey = `location${num}Emoji`;
+                        const imgKey = `location${num}Image`;
+                        const titleVal = formData[titleKey] || '';
+                        const captionVal = formData[captionKey] || '';
+                        const descVal = formData[descKey] || '';
+                        const emojiVal = formData[emojiKey] || '';
+                        const imgVal = formData[imgKey] || '';
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold" style={{color: '#e74c3c'}}>Pin {num}</span>
+                              <span className="text-[10px] text-gray-600">(free)</span>
+                            </div>
+                            {/* Location photo upload */}
+                            <div className="mb-2">
+                              <label className="block text-[10px] text-gray-500 mb-1">Photo (replaces emoji)</label>
+                              <div className="w-full h-20 rounded-md overflow-hidden bg-dark-900 border border-white/10 relative group">
+                                {imgVal ? (
+                                  <>
+                                    <img src={imgVal} alt={`Location ${num}`} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData(prev => ({ ...prev, [imgKey]: '' }))}
+                                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs"
+                                    >
+                                      Remove
+                                    </button>
+                                  </>
+                                ) : (
+                                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-dark-800 transition-colors">
+                                    <svg className="w-5 h-5 text-gray-600 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    <span className="text-[10px] text-gray-600">Upload image</span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      try {
+                                        const res = await startUpload([file]);
+                                        const url = (res?.[0] as any)?.ufsUrl || res?.[0]?.url;
+                                        if (url) setFormData(prev => ({ ...prev, [imgKey]: url }));
+                                      } catch (err) { console.error('Location image upload failed:', err); }
+                                    }} />
+                                  </label>
+                                )}
+                              </div>
+                            </div>
+                            {/* Emoji fallback - only show if no image uploaded */}
+                            {!imgVal && (
+                              <div className="mb-1.5">
+                                <input
+                                  type="text"
+                                  value={emojiVal}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, [emojiKey]: e.target.value }))}
+                                  className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                                  placeholder="Emoji fallback (e.g. ☕)"
+                                  maxLength={4}
+                                />
+                              </div>
+                            )}
+                            <input
+                              type="text"
+                              value={titleVal}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [titleKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1"
+                              placeholder="Place name (e.g. Coffee Shop)"
+                              maxLength={40}
+                            />
+                            {titleVal.length > 0 && (
+                              <p className={`text-[10px] mb-1 text-right ${titleVal.length >= 36 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {titleVal.length}/40
+                              </p>
+                            )}
+                            <input
+                              type="date"
+                              value={formData[dateKey] || ''}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [dateKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5 [color-scheme:dark]"
+                            />
+                            <input
+                              type="text"
+                              value={captionVal}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [captionKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1"
+                              placeholder="Polaroid caption (max 50)"
+                              maxLength={50}
+                            />
+                            {captionVal.length > 0 && (
+                              <p className={`text-[10px] mb-1 text-right ${captionVal.length >= 45 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {captionVal.length}/50
+                              </p>
+                            )}
+                            <textarea
+                              value={descVal}
+                              onChange={(e) => { if (e.target.value.length <= 200) setFormData(prev => ({ ...prev, [descKey]: e.target.value })); }}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
+                              rows={2}
+                              placeholder="What happened here?"
+                              maxLength={200}
+                            />
+                            {descVal.length > 0 && (
+                              <p className={`text-[10px] mt-0.5 text-right ${descVal.length >= 180 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {descVal.length}/200
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })()}

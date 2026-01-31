@@ -23,6 +23,7 @@ const RAW_FIELDS = new Set([
   'polaroidPhoto1','polaroidPhoto2','polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8',
   'heroImageUrl',
   'episode1Image','episode2Image','episode3Image',
+  'location1Image','location2Image','location3Image','location4Image',
   // Add any template fields that intentionally hold HTML or URLs
 ]);
 
