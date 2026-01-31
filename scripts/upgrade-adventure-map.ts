@@ -382,7 +382,7 @@ const upgradedAdventureMap = `<!DOCTYPE html>
       var waveAngle = Math.sin(progress * Math.PI * 4) * 25;
       // Vertical tilt: point downward when scrolling down, upward when scrolling up
       var tiltAngle = scrollDir === 1 ? 30 : -30;
-      var rotation = waveAngle + tiltAngle;
+      var rotation = waveAngle + tiltAngle + 90;
       
       plane.style.left = x + '%';
       plane.style.top = Math.min(y, window.innerHeight - 80) + 'px';
