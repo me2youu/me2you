@@ -397,9 +397,9 @@ const upgradedNetflix = `<!DOCTYPE html>
   
   <script>
     var allEpisodes = [
-      { key:'ep1', title:'{{episode1Title}}', date:'{{episode1Date}}', desc:'{{episode1Desc}}' },
-      { key:'ep2', title:'{{episode2Title}}', date:'{{episode2Date}}', desc:'{{episode2Desc}}' },
-      { key:'ep3', title:'{{episode3Title}}', date:'{{episode3Date}}', desc:'{{episode3Desc}}' }
+      { key:'ep1', title:'{{episode1Title}}', date:'{{episode1Date}}', desc:'{{episode1Desc}}', img:'{{episode1Image}}' },
+      { key:'ep2', title:'{{episode2Title}}', date:'{{episode2Date}}', desc:'{{episode2Desc}}', img:'{{episode2Image}}' },
+      { key:'ep3', title:'{{episode3Title}}', date:'{{episode3Date}}', desc:'{{episode3Desc}}', img:'{{episode3Image}}' }
     ];
     
     var mainEp = { title: '{{showTitle}}', desc: '{{customMessage}}' };
@@ -424,6 +424,13 @@ const upgradedNetflix = `<!DOCTYPE html>
       epLookup[ep.key] = { title: ep.title, desc: ep.desc };
       var card = document.createElement('div');
       card.className = 'card';
+      // Set episode image as card background if provided
+      var hasImg = ep.img && ep.img.trim() !== '' && !ep.img.match(/^\\{\\{/);
+      if (hasImg) {
+        card.style.backgroundImage = 'url(' + ep.img + ')';
+        card.style.backgroundSize = 'cover';
+        card.style.backgroundPosition = 'center';
+      }
       card.onclick = (function(k){ return function(){ showModal(k); }; })(ep.key);
       var dateStr = (ep.date && !ep.date.match(/^\\{\\{/)) ? ep.date : '';
       card.innerHTML = '<div class="card-info"><div class="card-title">' + ep.title + '</div><div class="card-ep">E' + (i+1) + (dateStr ? ' &bull; ' + dateStr : '') + '</div></div>';

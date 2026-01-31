@@ -67,9 +67,9 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'wrappedArtist1','wrappedArtist2','wrappedArtist3','wrappedArtist4','wrappedArtist5',
   'wrappedMoment1','wrappedMoment2','wrappedMoment3','wrappedMoment4','wrappedMoment5',
   'wrappedTheme',
-  'episode1Title','episode1Date','episode1Desc',
-  'episode2Title','episode2Date','episode2Desc',
-  'episode3Title','episode3Date','episode3Desc',
+  'episode1Title','episode1Date','episode1Desc','episode1Image',
+  'episode2Title','episode2Date','episode2Desc','episode2Image',
+  'episode3Title','episode3Date','episode3Desc','episode3Image',
   'top1','top2','top3',
   'heroImageUrl',
   'showTitle','showDescription','showYear',
@@ -1012,8 +1012,10 @@ export default function CustomizePage() {
                         const titleKey = `episode${num}Title`;
                         const dateKey = `episode${num}Date`;
                         const descKey = `episode${num}Desc`;
+                        const imgKey = `episode${num}Image`;
                         const titleVal = formData[titleKey] || '';
                         const descVal = formData[descKey] || '';
+                        const imgVal = formData[imgKey] || '';
                         return (
                           <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
                             <div className="flex items-center justify-between mb-2">
@@ -1021,6 +1023,38 @@ export default function CustomizePage() {
                               <span className="text-[10px] text-gray-600">
                                 {num === 1 ? '(free)' : '+$0.50'}
                               </span>
+                            </div>
+                            {/* Episode thumbnail upload */}
+                            <div className="mb-2">
+                              <label className="block text-[10px] text-gray-500 mb-1">Thumbnail</label>
+                              <div className="w-full h-20 rounded-md overflow-hidden bg-dark-900 border border-white/10 relative group">
+                                {imgVal ? (
+                                  <>
+                                    <img src={imgVal} alt={`E${num}`} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData(prev => ({ ...prev, [imgKey]: '' }))}
+                                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs"
+                                    >
+                                      Remove
+                                    </button>
+                                  </>
+                                ) : (
+                                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-dark-800 transition-colors">
+                                    <svg className="w-5 h-5 text-gray-600 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    <span className="text-[10px] text-gray-600">Upload image</span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      try {
+                                        const res = await startUpload([file]);
+                                        const url = (res?.[0] as any)?.ufsUrl || res?.[0]?.url;
+                                        if (url) setFormData(prev => ({ ...prev, [imgKey]: url }));
+                                      } catch (err) { console.error('Episode image upload failed:', err); }
+                                    }} />
+                                  </label>
+                                )}
+                              </div>
                             </div>
                             <input
                               type="text"
