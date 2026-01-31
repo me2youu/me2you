@@ -59,35 +59,40 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     /* Hero Banner */
     .hero {
-      height: clamp(400px, 85vh, 800px);
       position: relative;
       display: flex;
       align-items: flex-end;
-      padding: 0 4% 8%;
-      background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, transparent 60%),
-                  linear-gradient(0deg, #141414 0%, transparent 30%),
+      padding: 80px 4% 60px;
+      min-height: 420px;
+      background: linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%),
+                  linear-gradient(0deg, #141414 0%, transparent 40%),
                   url('{{heroImageUrl}}') center/cover no-repeat;
       background-color: #1a1a2e;
     }
     
     .hero-content {
-      max-width: 500px;
+      max-width: 450px;
+      position: relative;
+      z-index: 2;
     }
     
     .show-logo {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 4rem;
+      font-size: 3.5rem;
       line-height: 1;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
     
     .show-meta {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       font-size: 0.85rem;
+      flex-wrap: wrap;
     }
     
     .match {
@@ -102,10 +107,11 @@ const upgradedNetflix = `<!DOCTYPE html>
     }
     
     .show-desc {
-      font-size: 1rem;
+      font-size: 0.95rem;
       line-height: 1.5;
       color: #e5e5e5;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      word-break: break-word;
     }
     
     .hero-buttons {
@@ -146,14 +152,13 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     /* Content Rows */
     .content {
-      padding: 0 4%;
-      margin-top: -100px;
+      padding: 2rem 4% 3rem;
       position: relative;
       z-index: 10;
     }
     
     .row {
-      margin-bottom: 2rem;
+      margin-bottom: 2.5rem;
     }
     
     .row-title {
@@ -164,7 +169,7 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     .row-content {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       overflow-x: auto;
       padding-bottom: 10px;
       scroll-snap-type: x mandatory;
@@ -182,7 +187,7 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     .card {
       flex-shrink: 0;
-      width: 200px;
+      width: 220px;
       aspect-ratio: 16/9;
       background: #2a2a2a;
       border-radius: 4px;
@@ -199,12 +204,6 @@ const upgradedNetflix = `<!DOCTYPE html>
       z-index: 10;
     }
     
-    .card-bg {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
     .card-info {
       position: absolute;
       bottom: 0;
@@ -217,6 +216,9 @@ const upgradedNetflix = `<!DOCTYPE html>
     .card-title {
       font-size: 0.8rem;
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .card-ep {
@@ -224,28 +226,30 @@ const upgradedNetflix = `<!DOCTYPE html>
       color: #aaa;
     }
     
-    /* Top 10 */
+    /* Top Things */
     .top10-card {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-shrink: 0;
       scroll-snap-align: start;
+      min-width: 120px;
     }
     
     .top10-num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 5rem;
+      font-size: 4.5rem;
       color: #141414;
       -webkit-text-stroke: 2px #fff;
       line-height: 1;
+      flex-shrink: 0;
     }
     
-    .top10-img {
-      width: 100px;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 4px;
+    .top10-text {
+      font-size: 0.85rem;
+      font-weight: 600;
+      max-width: 140px;
+      word-break: break-word;
     }
     
     /* Modal */
@@ -271,6 +275,7 @@ const upgradedNetflix = `<!DOCTYPE html>
       width: 100%;
       max-height: 80vh;
       overflow-y: auto;
+      position: relative;
     }
     
     .modal-header {
@@ -278,7 +283,7 @@ const upgradedNetflix = `<!DOCTYPE html>
       background: linear-gradient(transparent, #181818),
                   linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4));
       background-color: #333;
-      min-height: 200px;
+      min-height: 180px;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
@@ -314,16 +319,19 @@ const upgradedNetflix = `<!DOCTYPE html>
       color: #fff;
       font-size: 1.2rem;
       cursor: pointer;
+      z-index: 5;
     }
     
     /* Hidden addon toggles */
     .addon-toggle { display: none; }
     
     @media (max-width: 600px) {
-      .show-logo { font-size: 2.5rem; }
-      .hero { height: clamp(300px, 70vh, 500px); padding-bottom: 12%; }
-      .card { width: 140px; }
+      .show-logo { font-size: 2.2rem; }
+      .hero { min-height: 320px; padding: 70px 4% 40px; }
+      .card { width: 160px; }
       .nav { display: none; }
+      .top10-num { font-size: 3.5rem; }
+      .content { padding-top: 1.5rem; }
     }
   </style>
 </head>
@@ -364,33 +372,30 @@ const upgradedNetflix = `<!DOCTYPE html>
   </section>
   
   <section class="content">
-    <!-- Episodes row — built dynamically by JS -->
     <div class="row">
       <h2 class="row-title">Season 1: The Beginning</h2>
       <div class="row-content" id="episodeRow"></div>
     </div>
     
-    <!-- Top Things row — built dynamically by JS -->
     <div class="row">
-      <h2 class="row-title">Top 10 Things About {{recipientName}}</h2>
+      <h2 class="row-title">Top Things About {{recipientName}}</h2>
       <div class="row-content" id="topThingsRow"></div>
     </div>
   </section>
   
   <div class="modal" id="modal" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
       <div class="modal-header">
         <h2 class="modal-title" id="modalTitle"></h2>
       </div>
       <div class="modal-body">
         <p class="modal-desc" id="modalDesc"></p>
       </div>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
   </div>
   
   <script>
-    // Episode data — ep1 always included, ep2-3 only if filled AND addon is on
     var allEpisodes = [
       { key:'ep1', title:'{{episode1Title}}', date:'{{episode1Date}}', desc:'{{episode1Desc}}' },
       { key:'ep2', title:'{{episode2Title}}', date:'{{episode2Date}}', desc:'{{episode2Desc}}' },
@@ -399,25 +404,18 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     var mainEp = { title: '{{showTitle}}', desc: '{{customMessage}}' };
     
-    // Top things data — top1-3 always included, top4-5 only if filled AND addon is on
-    var allTopThings = [
-      '{{top1}}','{{top2}}','{{top3}}','{{top4}}','{{top5}}'
-    ];
+    var allTopThings = ['{{top1}}','{{top2}}','{{top3}}'];
     
     var extraEpisodesOn = (document.getElementById('addonExtraEpisodes').textContent.trim() === 'true');
     var extraTopThingsOn = (document.getElementById('addonExtraTopThings').textContent.trim() === 'true');
     
-    // Filter episodes: ep1 always shows, ep2-3 only if extra addon on and filled
+    // Filter episodes: ep1 always shows if filled, ep2-3 only if addon on + filled
     var episodes = allEpisodes.filter(function(ep, i) {
-      if (i === 0) return ep.title && ep.title !== '{{episode1Title}}' && ep.title.trim() !== '';
+      var filled = ep.title && ep.title.trim() !== '' && !ep.title.match(/^\\{\\{/);
+      if (i === 0) return filled;
       if (!extraEpisodesOn) return false;
-      return ep.title && !ep.title.startsWith('{{') && ep.title.trim() !== '';
+      return filled;
     });
-    
-    // If no episodes at all (ep1 empty), still show ep1 slot
-    if (episodes.length === 0 && allEpisodes[0].title) {
-      episodes = [allEpisodes[0]];
-    }
     
     // Build episode cards
     var epRow = document.getElementById('episodeRow');
@@ -427,23 +425,25 @@ const upgradedNetflix = `<!DOCTYPE html>
       var card = document.createElement('div');
       card.className = 'card';
       card.onclick = (function(k){ return function(){ showModal(k); }; })(ep.key);
-      card.innerHTML = '<div class="card-info"><div class="card-title">' + ep.title + '</div><div class="card-ep">E' + (i+1) + ' &bull; ' + ep.date + '</div></div>';
+      var dateStr = (ep.date && !ep.date.match(/^\\{\\{/)) ? ep.date : '';
+      card.innerHTML = '<div class="card-info"><div class="card-title">' + ep.title + '</div><div class="card-ep">E' + (i+1) + (dateStr ? ' &bull; ' + dateStr : '') + '</div></div>';
       epRow.appendChild(card);
     });
     
-    // Filter top things: top1-3 always show, top4-5 only if extra addon on and filled
+    // Filter top things: top1-2 always show, top3 only if addon on + filled
     var topThings = allTopThings.filter(function(t, i) {
-      if (i < 3) return t && !t.startsWith('{{') && t.trim() !== '';
+      var filled = t && t.trim() !== '' && !t.match(/^\\{\\{/);
+      if (i < 2) return filled;
       if (!extraTopThingsOn) return false;
-      return t && !t.startsWith('{{') && t.trim() !== '';
+      return filled;
     });
     
-    // Build top things cards
+    // Build top things
     var topRow = document.getElementById('topThingsRow');
     topThings.forEach(function(t, i) {
       var card = document.createElement('div');
       card.className = 'top10-card';
-      card.innerHTML = '<span class="top10-num">' + (i+1) + '</span><div class="card-title">' + t + '</div>';
+      card.innerHTML = '<span class="top10-num">' + (i+1) + '</span><div class="top10-text">' + t + '</div>';
       topRow.appendChild(card);
     });
     

@@ -54,7 +54,7 @@ const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraSongs: ['wrappedSong3','wrappedArtist3','wrappedSong4','wrappedArtist4','wrappedSong5','wrappedArtist5'],
   enableExtraMoments: ['wrappedMoment3','wrappedMoment4','wrappedMoment5'],
   enableExtraEpisodes: ['episode2Title','episode2Date','episode2Desc','episode3Title','episode3Date','episode3Desc'],
-  enableExtraTopThings: ['top4','top5'],
+  enableExtraTopThings: ['top3'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
@@ -70,8 +70,9 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'episode1Title','episode1Date','episode1Desc',
   'episode2Title','episode2Date','episode2Desc',
   'episode3Title','episode3Date','episode3Desc',
-  'top1','top2','top3','top4','top5',
+  'top1','top2','top3',
   'heroImageUrl',
+  'showTitle','showDescription','showYear',
 ]);
 
 // Smart field type detection based on variable name
@@ -361,9 +362,9 @@ export default function CustomizePage() {
     ? [2,3].filter(n => (formData[`episode${n}Title`] || '').trim() !== '').length
     : 0;
   const extraEpisodesPrice = filledExtraEpisodesCount * ADDON_PRICE;
-  // Per-top-thing pricing: top 4-5 cost $0.50 each when extra top things addon is on
+  // Per-top-thing pricing: top3 costs $0.50 when extra top things addon is on
   const filledExtraTopThingsCount = formData.enableExtraTopThings === 'true'
-    ? [4,5].filter(n => (formData[`top${n}`] || '').trim() !== '').length
+    ? [3].filter(n => (formData[`top${n}`] || '').trim() !== '').length
     : 0;
   const extraTopThingsPrice = filledExtraTopThingsCount * ADDON_PRICE;
   const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice;
@@ -435,13 +436,11 @@ export default function CustomizePage() {
         });
       }
 
-      // Add per-top-thing pricing for extra top things (4-5)
+      // Add per-top-thing pricing for extra top thing (3)
       if (formData.enableExtraTopThings === 'true') {
-        [4,5].forEach(n => {
-          if ((formData[`top${n}`] || '').trim() !== '') {
-            enabledAddons.push({ type: `extraTopThing${n}`, price: ADDON_PRICE });
-          }
-        });
+        if ((formData.top3 || '').trim() !== '') {
+          enabledAddons.push({ type: 'extraTopThing3', price: ADDON_PRICE });
+        }
       }
 
       // 1. Create the gift
@@ -888,6 +887,62 @@ export default function CustomizePage() {
                 );
               })()}
 
+              {/* Show Details Editor - shown for streaming service templates */}
+              {templateVariables.some(v => v.name === 'showTitle') && (() => {
+                const titleVal = formData.showTitle || '';
+                const descVal = formData.showDescription || '';
+                const yearVal = formData.showYear || '';
+                const currentYear = new Date().getFullYear();
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <h4 className="text-white font-semibold text-sm mb-3">Show Details</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Show Title</label>
+                        <input
+                          type="text"
+                          value={titleVal}
+                          onChange={(e) => setFormData(prev => ({ ...prev, showTitle: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                          placeholder="e.g. Our Love Story"
+                          maxLength={20}
+                        />
+                        <p className={`text-[10px] mt-0.5 text-right ${titleVal.length >= 18 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                          {titleVal.length}/20
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Year</label>
+                        <select
+                          value={yearVal}
+                          onChange={(e) => setFormData(prev => ({ ...prev, showYear: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                        >
+                          <option value="">Select year</option>
+                          {Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i).map(y => (
+                            <option key={y} value={String(y)}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Description</label>
+                        <input
+                          type="text"
+                          value={descVal}
+                          onChange={(e) => setFormData(prev => ({ ...prev, showDescription: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs"
+                          placeholder="Short tagline for your show"
+                          maxLength={30}
+                        />
+                        <p className={`text-[10px] mt-0.5 text-right ${descVal.length >= 27 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                          {descVal.length}/30
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Hero Image Upload - shown for templates with heroImageUrl field */}
               {templateVariables.some(v => v.name === 'heroImageUrl') && (() => {
                 const heroVal = formData.heroImageUrl || '';
@@ -951,12 +1006,14 @@ export default function CustomizePage() {
                         {extraEpisodesEnabled ? 'Up to 3 episodes' : '1 episode included'}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-xs mb-3">Each episode is a memory — give it a title, date, and description</p>
+                    <p className="text-gray-600 text-xs mb-3">Each episode is a memory — title, date, and what happened</p>
                     <div className="space-y-3">
                       {Array.from({ length: maxEpisodes }, (_, i) => i + 1).map(num => {
                         const titleKey = `episode${num}Title`;
                         const dateKey = `episode${num}Date`;
                         const descKey = `episode${num}Desc`;
+                        const titleVal = formData[titleKey] || '';
+                        const descVal = formData[descKey] || '';
                         return (
                           <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
                             <div className="flex items-center justify-between mb-2">
@@ -967,36 +1024,32 @@ export default function CustomizePage() {
                             </div>
                             <input
                               type="text"
-                              value={formData[titleKey] || ''}
+                              value={titleVal}
                               onChange={(e) => setFormData(prev => ({ ...prev, [titleKey]: e.target.value }))}
                               className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5"
-                              placeholder="Episode title (e.g. The First Date)"
-                              maxLength={50}
+                              placeholder="Title (e.g. First Date)"
+                              maxLength={10}
                             />
-                            {(formData[titleKey] || '').length > 0 && (
-                              <p className={`text-[10px] mb-1 text-right ${(formData[titleKey] || '').length >= 45 ? 'text-accent-pink' : 'text-gray-600'}`}>
-                                {(formData[titleKey] || '').length}/50
-                              </p>
-                            )}
+                            <p className={`text-[10px] mb-1 text-right ${titleVal.length >= 9 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                              {titleVal.length}/10
+                            </p>
                             <input
-                              type="text"
+                              type="date"
                               value={formData[dateKey] || ''}
                               onChange={(e) => setFormData(prev => ({ ...prev, [dateKey]: e.target.value }))}
-                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5"
-                              placeholder="Date (e.g. Jan 2024)"
-                              maxLength={30}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1.5 [color-scheme:dark]"
                             />
                             <textarea
-                              value={formData[descKey] || ''}
+                              value={descVal}
                               onChange={(e) => { if (e.target.value.length <= 200) setFormData(prev => ({ ...prev, [descKey]: e.target.value })); }}
                               className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
                               rows={2}
                               placeholder="What happened? (shown when clicked)"
                               maxLength={200}
                             />
-                            {(formData[descKey] || '').length > 0 && (
-                              <p className={`text-[10px] mt-0.5 text-right ${(formData[descKey] || '').length >= 180 ? 'text-accent-pink' : 'text-gray-600'}`}>
-                                {(formData[descKey] || '').length}/200
+                            {descVal.length > 0 && (
+                              <p className={`text-[10px] mt-0.5 text-right ${descVal.length >= 180 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {descVal.length}/200
                               </p>
                             )}
                           </div>
@@ -1026,19 +1079,19 @@ export default function CustomizePage() {
               {/* Top Things Editor - shown for templates with top1 field */}
               {templateVariables.some(v => v.name === 'top1') && (() => {
                 const extraTopThingsEnabled = formData.enableExtraTopThings === 'true';
-                const maxItems = extraTopThingsEnabled ? 5 : 3;
+                const maxItems = extraTopThingsEnabled ? 3 : 2;
                 const filledExtra = extraTopThingsEnabled
-                  ? [4,5].filter(n => (formData[`top${n}`] || '').trim() !== '').length
+                  ? ((formData.top3 || '').trim() !== '' ? 1 : 0)
                   : 0;
                 return (
                   <div className="border-t border-white/5 pt-4 mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-semibold text-sm">Top Things</h4>
                       <span className="text-xs text-gray-500">
-                        {extraTopThingsEnabled ? 'Up to 5 items' : '3 items included'}
+                        {extraTopThingsEnabled ? 'Up to 3 items' : '2 items included'}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-xs mb-3">Top things about the recipient (shown in a ranked list)</p>
+                    <p className="text-gray-600 text-xs mb-3">Top things about the recipient</p>
                     <div className="space-y-2">
                       {Array.from({ length: maxItems }, (_, i) => i + 1).map(num => {
                         const key = `top${num}`;
@@ -1056,7 +1109,7 @@ export default function CustomizePage() {
                                 maxLength={60}
                               />
                               <span className="text-[10px] text-gray-600 shrink-0">
-                                {num <= 3 ? '(free)' : '+$0.50'}
+                                {num <= 2 ? '(free)' : '+$0.50'}
                               </span>
                             </div>
                             {val.length > 0 && (
@@ -1075,13 +1128,13 @@ export default function CustomizePage() {
                         className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
                       >
                         <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        <span className="text-accent-purple text-sm font-medium">Add More Top Things</span>
-                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                        <span className="text-accent-purple text-sm font-medium">Add One More</span>
+                        <span className="text-xs text-gray-500">($0.50)</span>
                       </button>
                     )}
                     {extraTopThingsEnabled && filledExtra > 0 && (
                       <p className="text-accent-green text-xs mt-2 text-right">
-                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra item{filledExtra > 1 ? 's' : ''}
+                        +$0.50 for 1 extra item
                       </p>
                     )}
                   </div>
