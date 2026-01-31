@@ -286,16 +286,15 @@ export default function CustomizePage() {
 
     let html = template.htmlTemplate;
 
-    // Replace all regular variables
-    templateVariables.forEach(v => {
-      const value = formData[v.name] || '';
-      html = html.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), value || `[${v.label}]`);
+    // Replace ALL formData keys (including custom editor fields and addon toggles)
+    Object.entries(formData).forEach(([key, value]) => {
+      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
     });
 
-    // Replace addon variables (enable* toggles) so preview shows confetti/sparkles/etc
-    availableAddons.forEach(addonKey => {
-      const value = formData[addonKey] || 'false';
-      html = html.replace(new RegExp(`\\{\\{${addonKey}\\}\\}`, 'g'), value);
+    // Replace any remaining {{var}} placeholders with friendly labels
+    html = html.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
+      if (varName.startsWith('enable')) return 'false';
+      return `[${formatLabel(varName)}]`;
     });
 
     if (template.cssTemplate) {
@@ -1152,19 +1151,19 @@ export default function CustomizePage() {
               })()}
             </div>
 
-            {/* Effect Addons */}
-            {availableAddons.length > 0 && (
+            {/* Effect Addons — only show paid addons (free toggles have their own "Add More" buttons) */}
+            {availableAddons.filter(a => !FREE_TOGGLE_ADDONS.has(a)).length > 0 && (
               <div className="border-t border-white/5 pt-6 mt-6">
                 <h4 className="text-white font-semibold text-sm mb-3">Add Effects</h4>
                 <div className="space-y-3">
-                  {availableAddons.map((addonKey) => {
+                  {availableAddons.filter(a => !FREE_TOGGLE_ADDONS.has(a)).map((addonKey) => {
                     const addon = ADDON_DETAILS[addonKey];
                     const isEnabled = formData[addonKey] === 'true';
                     return (
                       <button
                         key={addonKey}
                         type="button"
-                        onClick={() => setFormData({ ...formData, [addonKey]: isEnabled ? 'false' : 'true' })}
+                        onClick={() => setFormData(prev => ({ ...prev, [addonKey]: isEnabled ? 'false' : 'true' }))}
                         className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
                           isEnabled
                             ? 'bg-accent-purple/10 border-accent-purple/30'
@@ -1179,9 +1178,7 @@ export default function CustomizePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-accent-green text-xs font-medium">
-                            {FREE_TOGGLE_ADDONS.has(addonKey) ? 'Free' : '+$0.50'}
-                          </span>
+                          <span className="text-accent-green text-xs font-medium">+$0.50</span>
                           <div className={`w-10 h-6 rounded-full transition-all flex items-center ${
                             isEnabled ? 'bg-accent-purple justify-end' : 'bg-dark-700 justify-start'
                           }`}>

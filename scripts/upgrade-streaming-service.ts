@@ -59,12 +59,11 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     /* Hero Banner */
     .hero {
-      height: 85vh;
-      min-height: 500px;
+      height: clamp(400px, 85vh, 800px);
       position: relative;
       display: flex;
       align-items: flex-end;
-      padding: 0 4% 15%;
+      padding: 0 4% 8%;
       background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, transparent 60%),
                   linear-gradient(0deg, #141414 0%, transparent 30%),
                   url('{{heroImageUrl}}') center/cover no-repeat;
@@ -322,7 +321,7 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     @media (max-width: 600px) {
       .show-logo { font-size: 2.5rem; }
-      .hero { height: 70vh; padding-bottom: 20%; }
+      .hero { height: clamp(300px, 70vh, 500px); padding-bottom: 12%; }
       .card { width: 140px; }
       .nav { display: none; }
     }
