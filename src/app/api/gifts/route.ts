@@ -195,7 +195,15 @@ export async function GET(request: NextRequest) {
     }
 
     const userGifts = await db
-      .select()
+      .select({
+        id: gifts.id,
+        recipientName: gifts.recipientName,
+        customMessage: gifts.customMessage,
+        shortUrl: gifts.shortUrl,
+        viewCount: gifts.viewCount,
+        createdAt: gifts.createdAt,
+        templateId: gifts.templateId,
+      })
       .from(gifts)
       .where(eq(gifts.createdBy, userId));
 

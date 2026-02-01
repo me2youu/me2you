@@ -4,6 +4,9 @@ import { db } from '@/lib/db';
 import { templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+// Revalidate every 30 minutes — templates rarely change
+export const revalidate = 1800;
+
 const occasions = [
   { name: 'All', slug: undefined },
   { name: 'Birthday', slug: 'birthday' },
@@ -51,7 +54,17 @@ export default async function TemplatesPage({
   searchParams: Promise<{ occasion?: string }>;
 }) {
   const params = await searchParams;
-  const allTemplates = await db.select().from(templates).where(eq(templates.isActive, true));
+  const allTemplates = await db
+    .select({
+      id: templates.id,
+      name: templates.name,
+      description: templates.description,
+      occasion: templates.occasion,
+      thumbnailUrl: templates.thumbnailUrl,
+      basePrice: templates.basePrice,
+    })
+    .from(templates)
+    .where(eq(templates.isActive, true));
   const occasion = params.occasion;
 
   const filteredTemplates = occasion

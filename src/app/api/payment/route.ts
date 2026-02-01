@@ -19,7 +19,13 @@ export async function POST(request: NextRequest) {
     }
 
     const gift = await db
-      .select()
+      .select({
+        id: gifts.id,
+        templateId: gifts.templateId,
+        recipientName: gifts.recipientName,
+        shortUrl: gifts.shortUrl,
+        selectedAddons: gifts.selectedAddons,
+      })
       .from(gifts)
       .where(eq(gifts.id, giftId))
       .limit(1);
@@ -32,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch the template to get the USD price
     const template = await db
-      .select()
+      .select({ basePrice: templates.basePrice })
       .from(templates)
       .where(eq(templates.id, giftData.templateId))
       .limit(1);

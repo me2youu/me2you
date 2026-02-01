@@ -17,9 +17,15 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Missing giftId', { status: 400 });
     }
 
-    // Fetch the gift
+    // Fetch the gift (only fields needed for payment)
     const gift = await db
-      .select()
+      .select({
+        id: gifts.id,
+        templateId: gifts.templateId,
+        recipientName: gifts.recipientName,
+        shortUrl: gifts.shortUrl,
+        selectedAddons: gifts.selectedAddons,
+      })
       .from(gifts)
       .where(eq(gifts.id, giftId))
       .limit(1);
@@ -32,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch the template to get the USD price
     const template = await db
-      .select()
+      .select({ basePrice: templates.basePrice })
       .from(templates)
       .where(eq(templates.id, giftData.templateId))
       .limit(1);

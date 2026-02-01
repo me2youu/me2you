@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { gifts } from '@/lib/db/schema';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, sql } from 'drizzle-orm';
 
 // GET single gift by ID or shortUrl
 export async function GET(
@@ -22,11 +22,12 @@ export async function GET(
       return NextResponse.json({ error: 'Gift not found' }, { status: 404 });
     }
 
-    // Increment view count
-    await db
-      .update(gifts)
-      .set({ viewCount: gift[0].viewCount + 1 })
-      .where(eq(gifts.id, gift[0].id));
+    // Atomic view count increment (non-blocking)
+    db.update(gifts)
+      .set({ viewCount: sql`${gifts.viewCount} + 1` })
+      .where(eq(gifts.id, gift[0].id))
+      .then(() => {})
+      .catch((err) => console.error('View count increment failed:', err));
 
     return NextResponse.json(gift[0]);
   } catch (error) {
