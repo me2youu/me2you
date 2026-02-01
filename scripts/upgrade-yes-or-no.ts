@@ -107,7 +107,7 @@ const upgradedYesOrNo = `<!DOCTYPE html>
       id="ask-gif" class="gif" alt="Please say yes"
     />
     <img
-      src="https://media1.tenor.com/m/GBqmTPPsYMUAAAAd/happy-dancing.gif"
+      src="/images/yes-or-no/yipee.gif"
       id="yes-gif" class="gif hidden" alt="Yay!"
     />
     <p id="text">Click the yes below!</p>
