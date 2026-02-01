@@ -40,10 +40,11 @@ const ADDON_DETAILS: Record<string, { label: string; description: string; icon: 
   enableExtraMoments: { label: 'Extra Moments', description: 'Add up to 3 more moments to your top 5 ($0.50 each)', icon: '✨' },
   enableExtraEpisodes: { label: 'Extra Episodes', description: 'Add 2 more episodes to your show ($0.50 each filled)', icon: '🎬' },
   enableExtraTopThings: { label: 'Extra Top Things', description: 'Add 2 more items to your Top Things list ($0.50 each filled)', icon: '🏆' },
+  enableExtraLetters: { label: 'Extra Letters', description: 'Add up to 3 more letters ($0.50 each filled)', icon: '✉️' },
 };
 
 // Addons that are free toggles (they unlock paid fields instead of costing $0.50 themselves)
-const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs', 'enableExtraMoments', 'enableExtraEpisodes', 'enableExtraTopThings']);
+const FREE_TOGGLE_ADDONS = new Set(['enableExtraSlides', 'enableExtraPhotos', 'enableExtraSongs', 'enableExtraMoments', 'enableExtraEpisodes', 'enableExtraTopThings', 'enableExtraLetters']);
 
 // Fields that should only be visible when a specific addon is enabled
 const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
@@ -54,6 +55,7 @@ const ADDON_DEPENDENT_FIELDS: Record<string, string[]> = {
   enableExtraMoments: ['wrappedMoment3','wrappedMoment4','wrappedMoment5'],
   enableExtraEpisodes: ['episode2Title','episode2Date','episode2Desc','episode3Title','episode3Date','episode3Desc'],
   enableExtraTopThings: ['top3'],
+  enableExtraLetters: ['letter3Label','letter3Content','letter4Label','letter4Content','letter5Label','letter5Content'],
 };
 
 // Fields managed by custom UI editors (hidden from the generic form)
@@ -76,6 +78,9 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'location2Title','location2Date','location2Caption','location2Desc','location2Emoji','location2Image',
   'location3Title','location3Date','location3Caption','location3Desc','location3Emoji','location3Image',
   'location4Title','location4Date','location4Caption','location4Desc','location4Emoji','location4Image',
+  'letter1Label','letter1Content','letter2Label','letter2Content',
+  'letter3Label','letter3Content','letter4Label','letter4Content',
+  'letter5Label','letter5Content',
 ]);
 
 // Smart field type detection based on variable name
@@ -422,7 +427,12 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
     ? [3].filter(n => (formData[`top${n}`] || '').trim() !== '').length
     : 0;
   const extraTopThingsPrice = filledExtraTopThingsCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice;
+  // Per-letter pricing: letters 3-5 cost $0.50 each when extra letters addon is on
+  const filledExtraLettersCount = formData.enableExtraLetters === 'true'
+    ? [3,4,5].filter(n => (formData[`letter${n}Content`] || '').trim() !== '').length
+    : 0;
+  const extraLettersPrice = filledExtraLettersCount * ADDON_PRICE;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice + extraLettersPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -496,6 +506,15 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
         if ((formData.top3 || '').trim() !== '') {
           enabledAddons.push({ type: 'extraTopThing3', price: ADDON_PRICE });
         }
+      }
+
+      // Add per-letter pricing for extra letters (3-5)
+      if (formData.enableExtraLetters === 'true') {
+        [3,4,5].forEach(n => {
+          if ((formData[`letter${n}Content`] || '').trim() !== '') {
+            enabledAddons.push({ type: `extraLetter${n}`, price: ADDON_PRICE });
+          }
+        });
       }
 
       // 1. Create the gift
@@ -1373,6 +1392,86 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                 );
               })()}
 
+              {/* Letter Editor - shown for Open When Letters template */}
+              {templateVariables.some(v => v.name === 'letter1Label') && (() => {
+                const extraLettersEnabled = formData.enableExtraLetters === 'true';
+                const maxLetters = extraLettersEnabled ? 5 : 2;
+                const filledExtra = extraLettersEnabled
+                  ? [3,4,5].filter(n => (formData[`letter${n}Content`] || '').trim() !== '').length
+                  : 0;
+                return (
+                  <div className="border-t border-white/5 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold text-sm">Letters</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraLettersEnabled ? 'Up to 5 letters' : '2 letters included'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-3">Each letter has a label (when to open) and your message inside</p>
+                    <div className="space-y-3">
+                      {Array.from({ length: maxLetters }, (_, i) => i + 1).map(num => {
+                        const labelKey = `letter${num}Label`;
+                        const contentKey = `letter${num}Content`;
+                        const labelVal = formData[labelKey] || '';
+                        const contentVal = formData[contentKey] || '';
+                        return (
+                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold" style={{color: '#c9a84c'}}>Letter {num}</span>
+                              <span className="text-[10px] text-gray-600">
+                                {num <= 2 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={labelVal}
+                              onChange={(e) => setFormData(prev => ({ ...prev, [labelKey]: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs mb-1"
+                              placeholder="Open when... (e.g. you're sad)"
+                              maxLength={40}
+                            />
+                            {labelVal.length > 0 && (
+                              <p className={`text-[10px] mb-1 text-right ${labelVal.length >= 36 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {labelVal.length}/40
+                              </p>
+                            )}
+                            <textarea
+                              value={contentVal}
+                              onChange={(e) => { if (e.target.value.length <= 500) setFormData(prev => ({ ...prev, [contentKey]: e.target.value })); }}
+                              className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
+                              rows={3}
+                              placeholder="Your message inside this letter..."
+                              maxLength={500}
+                            />
+                            {contentVal.length > 0 && (
+                              <p className={`text-[10px] mt-0.5 text-right ${contentVal.length >= 450 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                                {contentVal.length}/500
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {!extraLettersEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraLetters: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Letters</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
+                    {extraLettersEnabled && filledExtra > 0 && (
+                      <p className="text-accent-green text-xs mt-2 text-right">
+                        +${(filledExtra * ADDON_PRICE).toFixed(2)} for {filledExtra} extra letter{filledExtra > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Wrapped Moments Editor - shown for templates with wrappedMoment fields */}
               {templateVariables.some(v => v.name === 'wrappedMoment1') && (() => {
                 const extraMomentsEnabled = formData.enableExtraMoments === 'true';
@@ -1570,7 +1669,7 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0 || extraEpisodesPrice > 0 || extraTopThingsPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0 || extraEpisodesPrice > 0 || extraTopThingsPrice > 0 || extraLettersPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
@@ -1580,6 +1679,7 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         filledExtraMomentsCount > 0 ? `${filledExtraMomentsCount} extra moment${filledExtraMomentsCount > 1 ? 's' : ''}` : '',
                         filledExtraEpisodesCount > 0 ? `${filledExtraEpisodesCount} extra episode${filledExtraEpisodesCount > 1 ? 's' : ''}` : '',
                         filledExtraTopThingsCount > 0 ? `${filledExtraTopThingsCount} extra top thing${filledExtraTopThingsCount > 1 ? 's' : ''}` : '',
+                        filledExtraLettersCount > 0 ? `${filledExtraLettersCount} extra letter${filledExtraLettersCount > 1 ? 's' : ''}` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>
