@@ -188,6 +188,26 @@ function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaption
   );
 }
 
+// Escape text for safe HTML/JS embedding in preview (matches server-side escapeHtml)
+function escapeForPreview(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Fields that hold URLs and should NOT be escaped in preview
+const PREVIEW_RAW_FIELDS = new Set([
+  'imageUrl', 'thumbnailUrl', 'audioUrl', 'videoUrl',
+  'memeImageUrls', 'memeSlide1', 'memeSlide2', 'memeSlide3', 'memeSlide4', 'memeSlide5',
+  'polaroidPhoto1','polaroidPhoto2','polaroidPhoto3','polaroidPhoto4','polaroidPhoto5','polaroidPhoto6','polaroidPhoto7','polaroidPhoto8',
+  'heroImageUrl',
+  'episode1Image','episode2Image','episode3Image',
+  'location1Image','location2Image','location3Image','location4Image',
+]);
+
 // Module-level variable extraction (used for initial state before component mounts)
 function extractVariablesStatic(html: string): TemplateVariable[] {
   const regex = /\{\{(\w+)\}\}/g;
@@ -298,8 +318,10 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
     let html = template.htmlTemplate;
 
     // Replace ALL formData keys (including custom editor fields and addon toggles)
+    // Escape text values to prevent broken HTML/JS (e.g. apostrophes in JS strings)
     Object.entries(formData).forEach(([key, value]) => {
-      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+      const safe = PREVIEW_RAW_FIELDS.has(key) ? (value || '') : escapeForPreview(value || '');
+      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), safe);
     });
 
     // Replace any remaining {{var}} placeholders with friendly labels
