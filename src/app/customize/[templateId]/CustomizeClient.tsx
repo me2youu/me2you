@@ -188,16 +188,25 @@ function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaption
   );
 }
 
-// Escape text for safe embedding in template preview
-// Must handle both HTML contexts and JS string literals (e.g. var x='{{val}}')
-// Uses backslash escaping for quotes (works in JS strings) and HTML entities for tags
-function escapeForPreview(str: string): string {
+// Escape for HTML contexts (renders correctly in DOM, safe from XSS)
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  // Note: single quotes are LEFT UNESCAPED — they're safe in HTML content
+}
+
+// Escape for JS string literal contexts (inside <script> tags)
+function escapeJs(str: string): string {
   return str
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\'")
     .replace(/"/g, '\\"')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/</g, '\\x3c')
+    .replace(/>/g, '\\x3e')
+    .replace(/\n/g, '\\n');
 }
 
 // Fields that hold URLs and should NOT be escaped in preview
@@ -319,12 +328,24 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
 
     let html = template.htmlTemplate;
 
-    // Replace ALL formData keys (including custom editor fields and addon toggles)
-    // Escape text values to prevent broken HTML/JS (e.g. apostrophes in JS strings)
-    Object.entries(formData).forEach(([key, value]) => {
-      const safe = PREVIEW_RAW_FIELDS.has(key) ? (value || '') : escapeForPreview(value || '');
-      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), safe);
-    });
+    // Context-aware escaping: JS strings need backslash escaping, HTML needs entity escaping
+    // Split on <script>...</script> blocks so we can apply the right escaping per context
+    const replaceVars = (text: string, escapeFn: (s: string) => string) => {
+      Object.entries(formData).forEach(([key, value]) => {
+        const raw = value || '';
+        const safe = PREVIEW_RAW_FIELDS.has(key) ? raw : escapeFn(raw);
+        text = text.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), safe);
+      });
+      return text;
+    };
+
+    // Process HTML parts and script parts separately
+    html = html.replace(
+      /(<script[\s>][\s\S]*?<\/script>)/gi,
+      (scriptBlock) => replaceVars(scriptBlock, escapeJs)
+    );
+    // Now replace remaining variables in HTML contexts
+    html = replaceVars(html, escapeHtml);
 
     // Replace any remaining {{var}} placeholders with friendly labels
     html = html.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
