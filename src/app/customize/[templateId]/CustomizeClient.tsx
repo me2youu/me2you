@@ -691,25 +691,30 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
               {/* Meme Slide Editor - shown for templates with memeSlide fields */}
               {templateVariables.some(v => v.name === 'memeSlide1') && (() => {
                 const extraSlidesEnabled = formData.enableExtraSlides === 'true';
-                const maxSlides = extraSlidesEnabled ? 5 : 1;
+                const maxSlides = extraSlidesEnabled ? 5 : 2;
                 const filledExtraSlides = extraSlidesEnabled
-                  ? [2,3,4,5].filter(n => (formData[`memeSlide${n}`] || '').trim() !== '').length
+                  ? [3,4,5].filter(n => (formData[`memeSlide${n}`] || '').trim() !== '').length
                   : 0;
                 return (
                   <div className="border-t border-white/5 pt-4 mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-semibold text-sm">GIF Slides</h4>
+                      <span className="text-xs text-gray-500">
+                        {extraSlidesEnabled ? 'Up to 5 slides' : '2 slides included'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-gray-600 text-xs">Paste a Giphy or image link for each slide</p>
                       <a
                         href="https://giphy.com/search/funny"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-accent-purple hover:text-accent-pink text-xs font-medium transition-colors"
+                        className="inline-flex items-center gap-1.5 text-accent-purple hover:text-accent-pink text-xs font-medium transition-colors shrink-0"
                       >
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                        Find GIFs on Giphy
+                        Find GIFs
                       </a>
                     </div>
-                    <p className="text-gray-600 text-xs mb-3">Paste a Giphy or image link for each slide</p>
                     <div className="space-y-2">
                       {Array.from({ length: maxSlides }, (_, i) => i + 1).map(num => {
                         const slideKey = `memeSlide${num}`;
@@ -717,9 +722,15 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         const slideVal = formData[slideKey] || '';
                         const captionVal = formData[captionKey] || '';
                         return (
-                          <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                           <div key={num} className="bg-dark-800/50 border border-white/5 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-bold text-accent-pink">#{num}</span>
+                              <span className="text-[10px] text-gray-600">
+                                {num <= 2 ? '(free)' : '+$0.50'}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-xs font-medium text-gray-400 w-6 shrink-0">#{num}</span>
+                              <span className="w-6 shrink-0"></span>
                               <input
                                 type="url"
                                 value={slideVal}
@@ -743,6 +754,17 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         );
                       })}
                     </div>
+                    {!extraSlidesEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, enableExtraSlides: 'true' }))}
+                        className="w-full mt-3 py-2.5 rounded-lg border border-dashed border-accent-purple/30 bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/50 transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <svg className="w-4 h-4 text-accent-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-accent-purple text-sm font-medium">Add More Slides</span>
+                        <span className="text-xs text-gray-500">($0.50 each)</span>
+                      </button>
+                    )}
                     {extraSlidesEnabled && filledExtraSlides > 0 && (
                       <p className="text-accent-green text-xs mt-2 text-right">
                         +${(filledExtraSlides * ADDON_PRICE).toFixed(2)} for {filledExtraSlides} extra slide{filledExtraSlides > 1 ? 's' : ''}
