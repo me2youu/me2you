@@ -188,14 +188,16 @@ function PolaroidPhotoSlot({ num, photoVal, captionVal, onPhotoChange, onCaption
   );
 }
 
-// Escape text for safe HTML/JS embedding in preview (matches server-side escapeHtml)
+// Escape text for safe embedding in template preview
+// Must handle both HTML contexts and JS string literals (e.g. var x='{{val}}')
+// Uses backslash escaping for quotes (works in JS strings) and HTML entities for tags
 function escapeForPreview(str: string): string {
   return str
-    .replace(/&/g, '&amp;')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/>/g, '&gt;');
 }
 
 // Fields that hold URLs and should NOT be escaped in preview
