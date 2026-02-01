@@ -103,7 +103,7 @@ const upgradedYesOrNo = `<!DOCTYPE html>
   <div id="app">
     <h1 id="heading">{{customMessage}}</h1>
     <img
-      src="https://media1.tenor.com/m/JTlSOPHbIEIAAAAd/cat-big-eyes.gif"
+      src="/images/yes-or-no/cute.gif"
       id="ask-gif" class="gif" alt="Please say yes"
     />
     <img
