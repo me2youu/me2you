@@ -46,6 +46,7 @@ export default async function GiftPage({
 
   return (
     <div
+      style={{ width: '100%', height: '100%', minHeight: '100vh' }}
       dangerouslySetInnerHTML={{ __html: gift.htmlSnapshot }}
       suppressHydrationWarning
     />
