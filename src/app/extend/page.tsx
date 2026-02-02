@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -34,6 +34,23 @@ function getCurrentTier(selectedAddons: any[] | null): string {
 const TIER_ORDER: Record<string, number> = { '24h': 0, '3d': 1, '1w': 2, 'lifetime': 3 };
 
 export default function ExtendPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-950">
+        <Header />
+        <main className="container mx-auto px-4 py-8 max-w-lg">
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-accent-purple border-t-transparent rounded-full animate-spin" />
+          </div>
+        </main>
+      </div>
+    }>
+      <ExtendContent />
+    </Suspense>
+  );
+}
+
+function ExtendContent() {
   const searchParams = useSearchParams();
   const giftId = searchParams.get('giftId');
 
