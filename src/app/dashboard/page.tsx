@@ -12,6 +12,8 @@ interface Gift {
   viewCount: number;
   createdAt: string;
   templateId: string;
+  expiresAt: string | null;
+  selectedAddons: any[] | null;
 }
 
 export default function DashboardPage() {
@@ -59,6 +61,28 @@ export default function DashboardPage() {
       day: 'numeric',
       year: 'numeric',
     });
+  }
+
+  function getExpiryStatus(gift: Gift): { label: string; color: string; canExtend: boolean } {
+    if (!gift.expiresAt) {
+      return { label: 'Lifetime', color: 'text-accent-green bg-accent-green/10 border-accent-green/20', canExtend: false };
+    }
+    const now = new Date();
+    const expires = new Date(gift.expiresAt);
+    if (expires < now) {
+      return { label: 'Expired', color: 'text-red-400 bg-red-400/10 border-red-400/20', canExtend: true };
+    }
+    // Still live — show time remaining
+    const diff = expires.getTime() - now.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    let timeLabel: string;
+    if (days > 0) {
+      timeLabel = `${days}d ${hours % 24}h left`;
+    } else {
+      timeLabel = `${hours}h left`;
+    }
+    return { label: timeLabel, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20', canExtend: true };
   }
 
   return (
@@ -146,6 +170,14 @@ export default function DashboardPage() {
                         </svg>
                         {gift.viewCount} view{gift.viewCount !== 1 ? 's' : ''}
                       </span>
+                      {(() => {
+                        const status = getExpiryStatus(gift);
+                        return (
+                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${status.color}`}>
+                            {status.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     {gift.customMessage && (
                       <p className="text-gray-500 text-sm truncate">{gift.customMessage}</p>
@@ -155,6 +187,14 @@ export default function DashboardPage() {
 
                   {/* Right: Actions */}
                   <div className="flex items-center gap-2 shrink-0">
+                    {getExpiryStatus(gift).canExtend && (
+                      <Link
+                        href={`/extend?giftId=${gift.id}`}
+                        className="px-3 py-2 rounded-lg text-xs font-medium bg-accent-purple/10 text-accent-purple border border-accent-purple/20 hover:bg-accent-purple/20 transition-all"
+                      >
+                        Extend
+                      </Link>
+                    )}
                     <button
                       onClick={() => copyLink(gift.id)}
                       className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${

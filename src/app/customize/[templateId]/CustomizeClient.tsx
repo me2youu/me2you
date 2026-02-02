@@ -273,6 +273,9 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
   const { startUpload } = useUploadThing('imageUploader');
   const [heroUploading, setHeroUploading] = useState(false);
 
+  // Gift duration state
+  const [giftDuration, setGiftDuration] = useState<'24h' | '3d' | '1w' | 'lifetime'>('24h');
+
   // Custom URL addon state
   const [wantCustomUrl, setWantCustomUrl] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
@@ -432,7 +435,10 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
     ? [3,4,5].filter(n => (formData[`letter${n}Content`] || '').trim() !== '').length
     : 0;
   const extraLettersPrice = filledExtraLettersCount * ADDON_PRICE;
-  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice + extraLettersPrice;
+  // Duration pricing
+  const DURATION_PRICES: Record<string, number> = { '24h': 0, '3d': 0.50, '1w': 1.00, 'lifetime': 2.00 };
+  const durationPrice = DURATION_PRICES[giftDuration] || 0;
+  const totalPrice = basePrice + customUrlPrice + addonsPrice + extraSlidesPrice + extraPhotosPrice + extraSongsPrice + extraMomentsPrice + extraEpisodesPrice + extraTopThingsPrice + extraLettersPrice + durationPrice;
 
   const handleCreateGift = async () => {
     const recipientName = formData.recipientName?.trim();
@@ -515,6 +521,11 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
             enabledAddons.push({ type: `extraLetter${n}`, price: ADDON_PRICE });
           }
         });
+      }
+
+      // Add duration addon if not default 24h
+      if (giftDuration !== '24h') {
+        enabledAddons.push({ type: `duration_${giftDuration}`, price: DURATION_PRICES[giftDuration] });
       }
 
       // 1. Create the gift
@@ -1721,6 +1732,39 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
               </div>
             </div>
 
+            {/* Gift Duration */}
+            <div className="border-t border-white/5 pt-6 mb-6">
+              <h3 className="text-sm font-semibold text-white mb-1">Gift Duration</h3>
+              <p className="text-xs text-gray-500 mb-3">How long should this gift stay live? You can extend later from your dashboard.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: '24h' as const, label: '24 Hours', desc: 'Included', price: '' },
+                  { key: '3d' as const, label: '3 Days', desc: '+$0.50', price: '$0.50' },
+                  { key: '1w' as const, label: '1 Week', desc: '+$1.00', price: '$1.00' },
+                  { key: 'lifetime' as const, label: 'Lifetime', desc: '+$2.00', price: '$2.00' },
+                ]).map(opt => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setGiftDuration(opt.key)}
+                    className={`relative p-3 rounded-lg border text-left transition-all ${
+                      giftDuration === opt.key
+                        ? 'border-accent-purple bg-accent-purple/10'
+                        : 'border-white/10 bg-dark-800/50 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="text-sm font-medium text-white">{opt.label}</div>
+                    <div className={`text-xs mt-0.5 ${giftDuration === opt.key ? 'text-accent-purple' : 'text-gray-500'}`}>
+                      {opt.desc}
+                    </div>
+                    {giftDuration === opt.key && (
+                      <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent-purple" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="border-t border-white/5 pt-6">
               <div className="flex items-center justify-between mb-5">
@@ -1729,7 +1773,7 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                     ${totalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-600 ml-2">USD, once-off</span>
-                  {(addonsPrice > 0 || customUrlPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0 || extraEpisodesPrice > 0 || extraTopThingsPrice > 0 || extraLettersPrice > 0) && (
+                  {(addonsPrice > 0 || customUrlPrice > 0 || durationPrice > 0 || extraSlidesPrice > 0 || extraPhotosPrice > 0 || extraSongsPrice > 0 || extraMomentsPrice > 0 || extraEpisodesPrice > 0 || extraTopThingsPrice > 0 || extraLettersPrice > 0) && (
                     <span className="text-xs text-accent-green ml-2">
                       (incl. {[
                         enabledAddonsCount > 0 ? `${enabledAddonsCount} addon${enabledAddonsCount > 1 ? 's' : ''}` : '',
@@ -1740,6 +1784,7 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         filledExtraEpisodesCount > 0 ? `${filledExtraEpisodesCount} extra episode${filledExtraEpisodesCount > 1 ? 's' : ''}` : '',
                         filledExtraTopThingsCount > 0 ? `${filledExtraTopThingsCount} extra top thing${filledExtraTopThingsCount > 1 ? 's' : ''}` : '',
                         filledExtraLettersCount > 0 ? `${filledExtraLettersCount} extra letter${filledExtraLettersCount > 1 ? 's' : ''}` : '',
+                        durationPrice > 0 ? `${giftDuration === 'lifetime' ? 'lifetime' : giftDuration === '1w' ? '1 week' : '3 days'} duration` : '',
                         customUrlPrice > 0 ? 'custom URL' : ''
                       ].filter(Boolean).join(' + ')})
                     </span>

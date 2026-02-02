@@ -203,6 +203,8 @@ export async function GET(request: NextRequest) {
         viewCount: gifts.viewCount,
         createdAt: gifts.createdAt,
         templateId: gifts.templateId,
+        expiresAt: gifts.expiresAt,
+        selectedAddons: gifts.selectedAddons,
       })
       .from(gifts)
       .where(eq(gifts.createdBy, userId));
