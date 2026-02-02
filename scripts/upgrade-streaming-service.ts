@@ -339,6 +339,7 @@ const upgradedNetflix = `<!DOCTYPE html>
   <!-- Addon toggles (hidden, read by JS) -->
   <div class="addon-toggle" id="addonExtraEpisodes">{{enableExtraEpisodes}}</div>
   <div class="addon-toggle" id="addonExtraTopThings">{{enableExtraTopThings}}</div>
+  <div style="display:none">{{moreInfoMessage}}</div>
 
   <header class="header">
     <div class="logo">ME2YOUFLIX</div>
@@ -357,14 +358,14 @@ const upgradedNetflix = `<!DOCTYPE html>
         <span class="match">98% Match</span>
         <span>{{showYear}}</span>
         <span class="rating">TV-MA</span>
-        <span>{{seasonCount}} Season</span>
+        <span id="seasonDisplay">{{seasonCount}} Season</span>
       </div>
       <p class="show-desc">{{showDescription}}</p>
       <div class="hero-buttons">
         <button class="btn btn-play" onclick="showModal('main')">
           <span>&#9654;</span> Play
         </button>
-        <button class="btn btn-info">
+        <button class="btn btn-info" onclick="showModal('info')">
           <span>&#8505;</span> More Info
         </button>
       </div>
@@ -403,6 +404,12 @@ const upgradedNetflix = `<!DOCTYPE html>
     ];
     
     var mainEp = { title: '{{showTitle}}', desc: '{{customMessage}}' };
+    var infoEp = { title: 'More Info', desc: '{{moreInfoMessage}}' };
+
+    // Fix season pluralization
+    var sc = parseInt('{{seasonCount}}') || 0;
+    var seasonEl = document.getElementById('seasonDisplay');
+    if (seasonEl) seasonEl.textContent = sc + ' Season' + (sc !== 1 ? 's' : '');
     
     var allTopThings = ['{{top1}}','{{top2}}','{{top3}}'];
     
@@ -419,7 +426,7 @@ const upgradedNetflix = `<!DOCTYPE html>
     
     // Build episode cards
     var epRow = document.getElementById('episodeRow');
-    var epLookup = { main: mainEp };
+    var epLookup = { main: mainEp, info: infoEp };
     episodes.forEach(function(ep, i) {
       epLookup[ep.key] = { title: ep.title, desc: ep.desc };
       var card = document.createElement('div');

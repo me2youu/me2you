@@ -73,7 +73,7 @@ const CUSTOM_EDITOR_FIELDS = new Set([
   'episode3Title','episode3Date','episode3Desc','episode3Image',
   'top1','top2','top3',
   'heroImageUrl',
-  'showTitle','showDescription','showYear',
+  'showTitle','showDescription','showYear','seasonCount','moreInfoMessage',
   'location1Title','location1Date','location1Caption','location1Desc','location1Emoji','location1Image',
   'location2Title','location2Date','location2Caption','location2Desc','location2Emoji','location2Image',
   'location3Title','location3Date','location3Caption','location3Desc','location3Emoji','location3Image',
@@ -703,6 +703,10 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                 // Hide fields managed by custom UI editors
                 if (CUSTOM_EDITOR_FIELDS.has(variable.name)) return null;
 
+                // Hide customMessage from generic form for streaming template (rendered in Show Details editor)
+                const isStreamingTemplate = templateVariables.some(v => v.name === 'showTitle');
+                if (isStreamingTemplate && variable.name === 'customMessage') return null;
+
                 // Check if this field depends on an addon being enabled
                 const dependentAddon = Object.entries(ADDON_DEPENDENT_FIELDS).find(
                   ([, fields]) => fields.includes(variable.name)
@@ -986,6 +990,9 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                 const titleVal = formData.showTitle || '';
                 const descVal = formData.showDescription || '';
                 const yearVal = formData.showYear || '';
+                const seasonVal = parseInt(formData.seasonCount || '0') || 0;
+                const playMsgVal = formData.customMessage || '';
+                const infoMsgVal = formData.moreInfoMessage || '';
                 const currentYear = new Date().getFullYear();
                 return (
                   <div className="border-t border-white/5 pt-4 mt-4">
@@ -1019,6 +1026,31 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         </select>
                       </div>
                       <div>
+                        <label className="block text-xs text-gray-400 mb-1">Season Count</label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, seasonCount: String(Math.max(0, seasonVal - 1)) }))}
+                            className="w-8 h-8 rounded-md bg-dark-900 border border-white/10 text-white flex items-center justify-center hover:bg-dark-800 transition-colors text-sm font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="text-white font-semibold text-sm w-12 text-center">
+                            {seasonVal}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, seasonCount: String(Math.min(100, seasonVal + 1)) }))}
+                            className="w-8 h-8 rounded-md bg-dark-900 border border-white/10 text-white flex items-center justify-center hover:bg-dark-800 transition-colors text-sm font-bold"
+                          >
+                            +
+                          </button>
+                          <span className="text-[10px] text-gray-600">
+                            {seasonVal === 1 ? '1 Season' : `${seasonVal} Seasons`}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
                         <label className="block text-xs text-gray-400 mb-1">Description</label>
                         <input
                           type="text"
@@ -1030,6 +1062,34 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                         />
                         <p className={`text-[10px] mt-0.5 text-right ${descVal.length >= 27 ? 'text-accent-pink' : 'text-gray-600'}`}>
                           {descVal.length}/30
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Message under &apos;Play&apos; button</label>
+                        <textarea
+                          value={playMsgVal}
+                          onChange={(e) => { if (e.target.value.length <= 150) setFormData(prev => ({ ...prev, customMessage: e.target.value })); }}
+                          className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
+                          rows={3}
+                          placeholder="The message shown when they click Play"
+                          maxLength={150}
+                        />
+                        <p className={`text-[10px] mt-0.5 text-right ${playMsgVal.length >= 135 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                          {playMsgVal.length}/150
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Message under &apos;More Info&apos; button</label>
+                        <textarea
+                          value={infoMsgVal}
+                          onChange={(e) => { if (e.target.value.length <= 200) setFormData(prev => ({ ...prev, moreInfoMessage: e.target.value })); }}
+                          className="w-full px-2.5 py-1.5 bg-dark-900 border border-white/10 rounded-md text-white placeholder-gray-600 focus:ring-1 focus:ring-accent-purple/50 outline-none transition-all text-xs resize-none"
+                          rows={3}
+                          placeholder="The message shown when they click More Info"
+                          maxLength={200}
+                        />
+                        <p className={`text-[10px] mt-0.5 text-right ${infoMsgVal.length >= 180 ? 'text-accent-pink' : 'text-gray-600'}`}>
+                          {infoMsgVal.length}/200
                         </p>
                       </div>
                     </div>

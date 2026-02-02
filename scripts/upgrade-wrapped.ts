@@ -165,6 +165,23 @@ const upgradedWrapped = `<!DOCTYPE html>
       animation:barGrow .8s ease-out backwards;
     }
 
+    /* Songs list */
+    .songs-list{width:100%;max-width:340px;margin-top:.6rem}
+    .song-item{
+      display:flex;align-items:center;gap:.6rem;padding:.45rem .5rem;
+      border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:.35rem;
+      border:1px solid rgba(255,255,255,.04);
+    }
+    .song-rank{
+      width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-size:.65rem;font-weight:800;flex-shrink:0;
+      background:linear-gradient(135deg,color-mix(in srgb,var(--c1),transparent 80%),color-mix(in srgb,var(--c2),transparent 85%));
+      color:var(--c2);border:1px solid color-mix(in srgb,var(--c1),transparent 70%);
+    }
+    .song-info{flex:1;min-width:0}
+    .song-name{font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .song-artist{font-size:.65rem;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
     /* Final message */
     .msg-card{
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
@@ -207,7 +224,7 @@ const upgradedWrapped = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <div style="display:none">{{enableExtraMoments}}{{wrappedTheme}}</div>
+  <div style="display:none">{{enableExtraMoments}}{{enableExtraSongs}}{{wrappedTheme}}{{wrappedSong2}}{{wrappedArtist2}}{{wrappedSong3}}{{wrappedArtist3}}{{wrappedSong4}}{{wrappedArtist4}}{{wrappedSong5}}{{wrappedArtist5}}</div>
 
   <div class="progress"><div class="progress-fill" id="progFill"></div></div>
   <div class="dots" id="dots"></div>
@@ -263,13 +280,12 @@ const upgradedWrapped = `<!DOCTYPE html>
       <p class="sub-text a3" style="margin-top:1.2rem" id="jokeSub">The thing nobody else gets</p>
     </div>
 
-    <!-- 4: Your Song -->
+    <!-- 4: Your Songs -->
     <div class="slide bg-5" data-slide="4">
       <p class="label a1" id="songLabel">Your Anthem</p>
-      <div class="vinyl asc"></div>
-      <p class="mid-text a2" style="margin-top:.8rem" id="songName"></p>
-      <p class="sub-text a3" id="songArtist"></p>
-      <div class="eq a4" style="margin-top:.8rem" aria-hidden="true">
+      <div class="vinyl asc" style="width:min(100px,24vw);height:min(100px,24vw)"></div>
+      <div class="songs-list a2" id="songsList"></div>
+      <div class="eq a3" style="margin-top:.5rem" aria-hidden="true">
         <div class="eq-bar" style="--h1:4px;--h2:18px;--d:.35s"></div>
         <div class="eq-bar" style="--h1:7px;--h2:28px;--d:.45s"></div>
         <div class="eq-bar" style="--h1:3px;--h2:22px;--d:.4s"></div>
@@ -304,8 +320,13 @@ const upgradedWrapped = `<!DOCTYPE html>
 
     var recipientName='{{recipientName}}';
     var togetherSince='{{togetherSince}}';
-    var songName='{{wrappedSong1}}';
-    var songArtist='{{wrappedArtist1}}';
+    var allSongs=[
+      {name:'{{wrappedSong1}}',artist:'{{wrappedArtist1}}'},
+      {name:'{{wrappedSong2}}',artist:'{{wrappedArtist2}}'},
+      {name:'{{wrappedSong3}}',artist:'{{wrappedArtist3}}'},
+      {name:'{{wrappedSong4}}',artist:'{{wrappedArtist4}}'},
+      {name:'{{wrappedSong5}}',artist:'{{wrappedArtist5}}'}
+    ].filter(function(s){return s.name&&s.name!==''&&!s.name.match(/^\\[/)});
 
     var moments=[
       '{{wrappedMoment1}}','{{wrappedMoment2}}','{{wrappedMoment3}}','{{wrappedMoment4}}','{{wrappedMoment5}}'
@@ -322,7 +343,7 @@ const upgradedWrapped = `<!DOCTYPE html>
       $('bestSub').textContent='The moment your heart melted';
       $('jokeLabel').textContent='Your Little Secret';
       $('jokeSub').textContent='What makes you two, you';
-      $('songLabel').textContent='Your Love Song';
+      $('songLabel').textContent='Your Love Songs';
       $('momentsLabel').textContent='Your Love Highlights';
     }else{
       $('heroLabel').textContent='Your Friendship';
@@ -333,7 +354,7 @@ const upgradedWrapped = `<!DOCTYPE html>
       $('bestSub').textContent='The moment that defined your year';
       $('jokeLabel').textContent='Your Inside Joke';
       $('jokeSub').textContent='The thing nobody else gets';
-      $('songLabel').textContent='Your Anthem';
+      $('songLabel').textContent='Your Top Songs';
       $('momentsLabel').textContent='Top Moments Together';
     }
 
@@ -352,13 +373,23 @@ const upgradedWrapped = `<!DOCTYPE html>
     }
     if(dayCount<=0){dayCount=0;$('sinceSub').textContent=''}
 
-    // Song
-    if(songName&&!songName.match(/^\\[/)){
-      $('songName').textContent=songName;
-      $('songArtist').textContent=(songArtist&&!songArtist.match(/^\\[/))?songArtist:'';
+    // Songs list
+    var songsList=$('songsList');
+    if(allSongs.length>0){
+      allSongs.forEach(function(s,i){
+        var item=document.createElement('div');
+        item.className='song-item a'+Math.min(i+2,5);
+        var artistStr=(s.artist&&!s.artist.match(/^\\[/))?s.artist:'';
+        item.innerHTML=
+          '<div class="song-rank">'+(i+1)+'</div>'+
+          '<div class="song-info">'+
+            '<div class="song-name">'+s.name+'</div>'+
+            (artistStr?'<div class="song-artist">'+artistStr+'</div>':'')+
+          '</div>';
+        songsList.appendChild(item);
+      });
     }else{
-      $('songName').textContent='Your Song';
-      $('songArtist').textContent='';
+      songsList.innerHTML='<p style="text-align:center;color:rgba(255,255,255,.3);padding:1rem;font-size:.8rem">No songs added yet</p>';
     }
 
     // Moments list

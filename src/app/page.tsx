@@ -10,6 +10,16 @@ import { unstable_cache } from "next/cache";
 // Revalidate every 1 hour (templates don't change often)
 export const revalidate = 3600;
 
+// Top 6 templates in valentines order
+const TOP_6_ORDER: Record<string, number> = {
+  'Yes or No': 1,
+  'Wrapped': 2,
+  'Streaming Service': 3,
+  'Fortune Cookie': 4,
+  'Adventure Map': 5,
+  'Open When Letters': 6,
+};
+
 // Cache the template query for 1 hour
 const getTemplates = unstable_cache(
   async () => {
@@ -22,9 +32,13 @@ const getTemplates = unstable_cache(
           thumbnailUrl: templates.thumbnailUrl,
         })
         .from(templates)
-        .where(eq(templates.isActive, true))
-        .limit(6);
-      return allTemplates;
+        .where(eq(templates.isActive, true));
+      
+      // Sort by valentines order, take top 6
+      return allTemplates
+        .filter(t => TOP_6_ORDER[t.name] !== undefined)
+        .sort((a, b) => (TOP_6_ORDER[a.name] ?? 999) - (TOP_6_ORDER[b.name] ?? 999))
+        .slice(0, 6);
     } catch (error) {
       console.error('Error fetching templates:', error);
       return [];
@@ -38,9 +52,9 @@ export default async function Home() {
   const templateList = await getTemplates();
 
   const stats = [
-    { value: '23+', label: 'Templates' },
+    { value: '20+', label: 'Templates' },
     { value: '60s', label: 'To Create' },
-    { value: 'R10', label: 'Per Gift' },
+    { value: '$1', label: 'Per Gift' },
     { value: '100%', label: 'Smiles' },
   ];
 
@@ -156,7 +170,7 @@ export default async function Home() {
         <section className="container mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-bold font-poppins text-white mb-4">
-              23+ Interactive Templates
+              20+ Interactive Templates
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               From playful to romantic. Each one is fully customizable and takes under 60 seconds to personalize.
@@ -220,7 +234,7 @@ export default async function Home() {
               href="/templates"
               className="inline-flex items-center gap-2 text-accent-purple hover:text-accent-pink transition-colors font-medium"
             >
-              View all 23+ templates
+              View all 20+ templates
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -234,7 +248,7 @@ export default async function Home() {
             <h2 className="text-3xl md:text-5xl font-bold font-poppins text-white mb-4">
               Three Steps. Done.
             </h2>
-            <p className="text-gray-400 text-lg">No account needed. No app to download.</p>
+            <p className="text-gray-400 text-lg">No app to download.</p>
           </div>
 
           <div className="max-w-5xl mx-auto">
@@ -244,7 +258,7 @@ export default async function Home() {
                   step: '01',
                   icon: '🎨',
                   title: 'Pick a template',
-                  desc: 'Choose from 23+ interactive designs - scratch cards, vinyl players, love letters, and more.',
+                  desc: 'Choose from 20+ interactive designs - scratch cards, vinyl players, love letters, and more.',
                   gradient: 'from-accent-purple to-accent-blue',
                 },
                 {
@@ -258,7 +272,7 @@ export default async function Home() {
                   step: '03',
                   icon: '🚀',
                   title: 'Send the link',
-                  desc: 'Pay R10, get a unique URL instantly. Share via text, DM, email - anywhere.',
+                  desc: 'Pay from $1, get a unique URL instantly. Share via text, DM, email - anywhere.',
                   gradient: 'from-accent-teal to-accent-green',
                 },
               ].map((item) => (
@@ -297,7 +311,7 @@ export default async function Home() {
                 <p className="text-gray-400 mb-8 text-lg max-w-xl mx-auto">
                   60 seconds to create. A lifetime to remember.
                   <br className="hidden md:block" />
-                  <span className="text-accent-purple font-medium">Just R10 per gift.</span>
+                  <span className="text-accent-purple font-medium">From just $1 per gift.</span>
                 </p>
                 <Link
                   href="/templates"
