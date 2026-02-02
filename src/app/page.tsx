@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import Header from "@/components/Header";
 import TypingAnimation from "@/components/TypingAnimation";
 import HomeEffects from "@/components/HomeEffects";
@@ -34,7 +35,6 @@ const getTemplates = unstable_cache(
         .from(templates)
         .where(eq(templates.isActive, true));
       
-      // Sort by valentines order, take top 6
       return allTemplates
         .filter(t => TOP_6_ORDER[t.name] !== undefined)
         .sort((a, b) => (TOP_6_ORDER[a.name] ?? 999) - (TOP_6_ORDER[b.name] ?? 999))
@@ -48,38 +48,105 @@ const getTemplates = unstable_cache(
   { revalidate: 3600, tags: ['templates'] }
 );
 
-export default async function Home() {
+// Skeleton loader for template cards
+function TemplateShowcaseSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="glass rounded-2xl overflow-hidden animate-pulse">
+          <div className="aspect-video bg-dark-800" />
+          <div className="p-4 md:p-5 space-y-2">
+            <div className="h-5 bg-dark-700 rounded w-2/3" />
+            <div className="h-4 bg-dark-700/50 rounded w-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Async component — fetches templates, streamed via Suspense
+async function TemplateShowcase() {
   const templateList = await getTemplates();
 
-  const stats = [
-    { value: '20+', label: 'Templates' },
-    { value: '60s', label: 'To Create' },
-    { value: '$1', label: 'Per Gift' },
-    { value: '100%', label: 'Smiles' },
-  ];
+  if (templateList.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Templates loading...</p>
+        <Link href="/templates" className="text-accent-purple hover:underline mt-2 inline-block">
+          View all templates
+        </Link>
+      </div>
+    );
+  }
 
   return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
+      {templateList.map((template) => (
+        <Link
+          key={template.id}
+          href={`/customize/${template.id}`}
+          className="group"
+        >
+          <div className="glass rounded-2xl overflow-hidden hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-purple/10">
+            <div className="aspect-video bg-dark-800 relative overflow-hidden">
+              {template.thumbnailUrl ? (
+                <img
+                  src={template.thumbnailUrl}
+                  alt={template.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <span className="text-white font-medium flex items-center gap-2">
+                  Customize Now
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div className="p-4 md:p-5">
+              <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-accent-purple transition-colors">
+                {template.name}
+              </h3>
+              <p className="text-gray-500 text-sm line-clamp-2">{template.description}</p>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+const stats = [
+  { value: '20+', label: 'Templates' },
+  { value: '60s', label: 'To Create' },
+  { value: '$1', label: 'Per Gift' },
+  { value: '100%', label: 'Smiles' },
+];
+
+export default function Home() {
+  return (
     <div className="min-h-screen bg-dark-950 relative overflow-hidden">
-      {/* Desktop-only effects (cursor trail, particles) - loads after content */}
       <HomeEffects />
 
       {/* Animated Background - CSS only, no JS */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Gradient Orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[100px] md:blur-[150px] animate-float" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[100px] md:blur-[150px] animate-float-delayed" />
         <div className="absolute top-[40%] right-[20%] w-[300px] md:w-[400px] h-[300px] md:h-[400px] bg-accent-blue/10 rounded-full blur-[80px] md:blur-[120px] animate-float-slow" />
         <div className="absolute bottom-[30%] left-[15%] w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-accent-teal/10 rounded-full blur-[60px] md:blur-[100px] animate-float-delayed" />
         
-        {/* Glowing accent lines */}
         <div className="absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-purple/20 to-transparent animate-pulse-slow" />
         <div className="absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow animation-delay-200" />
         <div className="absolute top-[85%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/10 to-transparent animate-pulse-slow animation-delay-100" />
         
-        {/* Radial gradient overlay */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,10,15,0.4)_70%,rgba(10,10,15,0.8)_100%)]" />
         
-        {/* Grid Pattern */}
         <div 
           className="absolute inset-0 opacity-[0.015] md:opacity-[0.025]"
           style={{
@@ -89,7 +156,6 @@ export default async function Home() {
           }}
         />
         
-        {/* Noise texture overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
         }} />
@@ -98,10 +164,9 @@ export default async function Home() {
       <div className="relative z-10">
         <Header />
 
-        {/* Hero Section */}
+        {/* Hero Section — renders immediately, no DB dependency */}
         <section className="container mx-auto px-4 pt-12 md:pt-20 pb-16">
           <div className="max-w-5xl mx-auto text-center">
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-strong text-sm mb-8 animate-fade-in">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75"></span>
@@ -110,20 +175,17 @@ export default async function Home() {
               <span className="text-gray-300">New templates added weekly</span>
             </div>
 
-            {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-poppins mb-6 leading-tight animate-fade-in-up">
               <span className="text-white">Gift websites for</span>
               <br />
               <TypingAnimation />
             </h1>
 
-            {/* Subtitle */}
             <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animation-delay-100">
               Create a tiny, personalized website in under a minute.
               <span className="hidden sm:inline"> Add their name, your message, inside jokes - then share a link they&apos;ll actually remember.</span>
             </p>
 
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-200">
               <Link
                 href="/templates"
@@ -148,7 +210,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Stats Section */}
+        {/* Stats Section — static, renders immediately */}
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="glass-strong rounded-2xl p-6 md:p-8">
@@ -166,7 +228,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Template Showcase */}
+        {/* Template Showcase — async, streamed via Suspense */}
         <section className="container mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-bold font-poppins text-white mb-4">
@@ -177,57 +239,9 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
-            {templateList.length === 0 ? (
-              // Fallback if DB fails
-              <div className="col-span-full text-center py-12">
-                <p className="text-gray-500">Templates loading...</p>
-                <Link href="/templates" className="text-accent-purple hover:underline mt-2 inline-block">
-                  View all templates
-                </Link>
-              </div>
-            ) : (
-              templateList.map((template) => (
-                <Link
-                  key={template.id}
-                  href={`/customize/${template.id}`}
-                  className="group"
-                >
-                  <div className="glass rounded-2xl overflow-hidden hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-purple/10">
-                    {/* Thumbnail */}
-                    <div className="aspect-video bg-dark-800 relative overflow-hidden">
-                      {template.thumbnailUrl ? (
-                        <img
-                          src={template.thumbnailUrl}
-                          alt={template.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20" />
-                      )}
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                        <span className="text-white font-medium flex items-center gap-2">
-                          Customize Now
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Content */}
-                    <div className="p-4 md:p-5">
-                      <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-accent-purple transition-colors">
-                        {template.name}
-                      </h3>
-                      <p className="text-gray-500 text-sm line-clamp-2">{template.description}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
+          <Suspense fallback={<TemplateShowcaseSkeleton />}>
+            <TemplateShowcase />
+          </Suspense>
 
           <div className="text-center mt-10">
             <Link
@@ -242,7 +256,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* How It Works */}
+        {/* How It Works — static, renders immediately */}
         <section id="how-it-works" className="container mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold font-poppins text-white mb-4">
@@ -293,11 +307,10 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Final CTA */}
+        {/* Final CTA — static, renders immediately */}
         <section className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto">
             <div className="relative glass-strong rounded-3xl p-8 md:p-16 text-center overflow-hidden">
-              {/* Background decoration */}
               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute -top-20 -left-20 w-40 h-40 bg-accent-purple/30 rounded-full blur-3xl" />
                 <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-accent-pink/30 rounded-full blur-3xl" />
