@@ -285,15 +285,6 @@ const upgradedAdventureMap = `<!DOCTYPE html>
       white-space: pre-wrap;
     }
     
-    /* Floating paper heart (replaces plane) */
-    .floater {
-      position: fixed;
-      font-size: 1.8rem;
-      pointer-events: none;
-      z-index: 100;
-      transition: left 0.2s ease, top 0.2s ease;
-      filter: drop-shadow(2px 4px 6px rgba(233,30,99,0.3));
-    }
     
     /* Final message */
     .final-message {
@@ -464,7 +455,6 @@ const upgradedAdventureMap = `<!DOCTYPE html>
     </div>
   </div>
   
-  <div class="floater" id="floater">\uD83E\uDE77</div>
   <div class="sparkle-fixed">\u2728</div>
   
   <script>
@@ -507,31 +497,6 @@ const upgradedAdventureMap = `<!DOCTYPE html>
       observer.observe(el);
     });
     
-    // Floating heart follows scroll
-    var floater = document.getElementById('floater');
-    var lastScrollY = window.scrollY;
-    var scrollDir = 1;
-    
-    window.addEventListener('scroll', function() {
-      var currentY = window.scrollY;
-      var maxScroll = document.body.scrollHeight - window.innerHeight;
-      if (maxScroll <= 0) return;
-      
-      if (currentY > lastScrollY) scrollDir = 1;
-      else if (currentY < lastScrollY) scrollDir = -1;
-      lastScrollY = currentY;
-      
-      var progress = currentY / maxScroll;
-      var x = 50 + Math.sin(progress * Math.PI * 3) * 20;
-      var y = 60 + progress * (window.innerHeight - 120);
-      
-      var scale = 0.8 + Math.sin(progress * Math.PI * 2) * 0.2;
-      var rotation = Math.sin(progress * Math.PI * 4) * 15;
-      
-      floater.style.left = x + '%';
-      floater.style.top = Math.min(y, window.innerHeight - 60) + 'px';
-      floater.style.transform = 'scale(' + scale + ') rotate(' + rotation + 'deg)';
-    });
   </script>
 </body>
 </html>`;
