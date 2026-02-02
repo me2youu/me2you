@@ -121,11 +121,13 @@ export default async function TemplatesPage({
                 key={occ.slug}
                 href={occ.slug === 'valentines' ? '/templates' : `/templates?occasion=${occ.slug}`}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  isActive
-                    ? isValentine
-                      ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/25 animate-pulse'
-                      : 'bg-accent-purple text-white shadow-lg shadow-accent-purple/25'
-                    : 'glass text-gray-400 hover:text-white hover:bg-dark-600/80'
+                  isValentine
+                    ? isActive
+                      ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30 valentine-glow'
+                      : 'border border-pink-500/50 text-pink-400 shadow-md shadow-pink-500/20 valentine-glow hover:bg-pink-500/10'
+                    : isActive
+                      ? 'bg-accent-purple text-white shadow-lg shadow-accent-purple/25'
+                      : 'glass text-gray-400 hover:text-white hover:bg-dark-600/80'
                 }`}
               >
                 {occ.name}
