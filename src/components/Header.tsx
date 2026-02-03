@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
 
@@ -18,9 +19,12 @@ export default function Header() {
         <nav className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center group">
-            <img 
+            <Image 
               src="/logo-small.png" 
               alt="Me2You" 
+              width={120}
+              height={40}
+              priority
               className="h-10 w-auto group-hover:scale-105 transition-transform"
             />
           </Link>

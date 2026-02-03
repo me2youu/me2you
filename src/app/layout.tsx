@@ -3,18 +3,23 @@ import { Inter, Poppins } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
-import HelpBubble from '@/components/HelpBubble';
+import dynamic from 'next/dynamic';
 import "./globals.css";
+
+// Lazy-load HelpBubble — not needed for first paint
+const HelpBubble = dynamic(() => import('@/components/HelpBubble'), { ssr: false });
 
 const inter = Inter({ 
   subsets: ["latin"],
   variable: '--font-inter',
+  display: 'swap',
 });
 
 const poppins = Poppins({ 
-  weight: ['500', '600', '700'],
+  weight: ['600', '700'],
   subsets: ["latin"],
   variable: '--font-poppins',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -37,8 +42,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
+        <head>
+          <link rel="preconnect" href="https://utfs.io" crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href="https://utfs.io" />
+        </head>
         <body className={`${inter.variable} ${poppins.variable} antialiased`}>
           {children}
           <HelpBubble />

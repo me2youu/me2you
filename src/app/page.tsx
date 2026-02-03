@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import TypingAnimation from "@/components/TypingAnimation";
-import HomeEffects from "@/components/HomeEffects";
 import { db } from "@/lib/db";
 import { templates } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+
+// Lazy-load desktop-only effects — zero impact on mobile LCP
+const HomeEffects = dynamic(() => import("@/components/HomeEffects"), { ssr: false });
 
 // Revalidate every 1 hour (templates don't change often)
 export const revalidate = 3600;
@@ -98,7 +101,6 @@ async function TemplateShowcase() {
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20" />
@@ -137,17 +139,17 @@ export default function Home() {
     <div className="min-h-screen bg-dark-950 relative overflow-hidden">
       <HomeEffects />
 
-      {/* Animated Background - CSS only, simplified on mobile for performance */}
+      {/* Animated Background - CSS only, minimal on mobile */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Blobs: static on mobile (no animation, reduced blur), animated on desktop */}
-        <div className="absolute top-[-20%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[60px] md:blur-[150px] md:animate-float" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[60px] md:blur-[150px] md:animate-float-delayed" />
+        {/* Blobs: hidden on mobile, animated on desktop */}
+        <div className="hidden md:block absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-accent-purple/20 rounded-full blur-[150px] animate-float" />
+        <div className="hidden md:block absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-accent-pink/20 rounded-full blur-[150px] animate-float-delayed" />
         <div className="hidden md:block absolute top-[40%] right-[20%] w-[400px] h-[400px] bg-accent-blue/10 rounded-full blur-[120px] animate-float-slow" />
         <div className="hidden md:block absolute bottom-[30%] left-[15%] w-[300px] h-[300px] bg-accent-teal/10 rounded-full blur-[100px] animate-float-delayed" />
         
         {/* Subtle lines - desktop only */}
         <div className="hidden md:block absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-purple/20 to-transparent animate-pulse-slow" />
-        <div className="hidden md:block absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow animation-delay-200" />
+        <div className="hidden md:block absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow" />
         
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,10,15,0.4)_70%,rgba(10,10,15,0.8)_100%)]" />
         
@@ -168,7 +170,7 @@ export default function Home() {
         {/* Hero Section — renders immediately, no DB dependency */}
         <section className="container mx-auto px-4 pt-12 md:pt-20 pb-16">
           <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-strong text-sm mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-strong text-sm mb-8">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple"></span>
@@ -176,18 +178,18 @@ export default function Home() {
               <span className="text-gray-300">New templates added weekly</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-poppins mb-6 leading-tight animate-fade-in-up">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-poppins mb-6 leading-tight">
               <span className="text-white">Gift websites for</span>
               <br />
               <TypingAnimation />
             </h1>
 
-            <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animation-delay-100">
+            <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
               Create a tiny, personalized website in under a minute.
               <span className="hidden sm:inline"> Add their name, your message, inside jokes - then share a link they&apos;ll actually remember.</span>
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-200">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/templates"
                 className="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-accent-purple to-accent-pink text-white px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-accent-purple/30"

@@ -7,8 +7,11 @@ const phrases = ['valentines', 'birthdays', 'anniversaries', 'apologies', 'thank
 export default function TypingAnimation() {
   const [index, setIndex] = useState(0);
   const [fading, setFading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setHydrated(true);
+
     const interval = setInterval(() => {
       setFading(true);
       const timeout = setTimeout(() => {
@@ -23,8 +26,12 @@ export default function TypingAnimation() {
 
   return (
     <span
-      className="text-gradient bg-gradient-to-r from-accent-purple via-accent-pink to-accent-orange bg-[length:200%_auto] animate-gradient inline-block transition-all duration-300"
-      style={{ opacity: fading ? 0 : 1, transform: fading ? 'translateY(8px)' : 'translateY(0)' }}
+      className="text-gradient bg-gradient-to-r from-accent-purple via-accent-pink to-accent-orange bg-[length:200%_auto] animate-gradient inline-block"
+      style={{
+        opacity: hydrated ? (fading ? 0 : 1) : 1,
+        transform: hydrated ? (fading ? 'translateY(8px)' : 'translateY(0)') : 'none',
+        transition: hydrated ? 'opacity 0.3s, transform 0.3s' : 'none',
+      }}
     >
       {phrases[index]}
     </span>
