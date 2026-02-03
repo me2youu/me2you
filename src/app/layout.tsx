@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 const poppins = Poppins({ 
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '600', '700'],
   subsets: ["latin"],
   variable: '--font-poppins',
 });

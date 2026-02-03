@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import Header from "@/components/Header";
 import TypingAnimation from "@/components/TypingAnimation";
@@ -89,12 +90,14 @@ async function TemplateShowcase() {
           className="group"
         >
           <div className="glass rounded-2xl overflow-hidden hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-purple/10">
-            <div className="aspect-video bg-dark-800 relative overflow-hidden">
+            <div className="aspect-video bg-dark-800 overflow-hidden relative">
               {template.thumbnailUrl ? (
-                <img
+                <Image
                   src={template.thumbnailUrl}
                   alt={template.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
               ) : (
@@ -134,31 +137,29 @@ export default function Home() {
     <div className="min-h-screen bg-dark-950 relative overflow-hidden">
       <HomeEffects />
 
-      {/* Animated Background - CSS only, no JS */}
+      {/* Animated Background - CSS only, simplified on mobile for performance */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[100px] md:blur-[150px] animate-float" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[100px] md:blur-[150px] animate-float-delayed" />
-        <div className="absolute top-[40%] right-[20%] w-[300px] md:w-[400px] h-[300px] md:h-[400px] bg-accent-blue/10 rounded-full blur-[80px] md:blur-[120px] animate-float-slow" />
-        <div className="absolute bottom-[30%] left-[15%] w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-accent-teal/10 rounded-full blur-[60px] md:blur-[100px] animate-float-delayed" />
+        {/* Blobs: static on mobile (no animation, reduced blur), animated on desktop */}
+        <div className="absolute top-[-20%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-purple/20 rounded-full blur-[60px] md:blur-[150px] md:animate-float" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-accent-pink/20 rounded-full blur-[60px] md:blur-[150px] md:animate-float-delayed" />
+        <div className="hidden md:block absolute top-[40%] right-[20%] w-[400px] h-[400px] bg-accent-blue/10 rounded-full blur-[120px] animate-float-slow" />
+        <div className="hidden md:block absolute bottom-[30%] left-[15%] w-[300px] h-[300px] bg-accent-teal/10 rounded-full blur-[100px] animate-float-delayed" />
         
-        <div className="absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-purple/20 to-transparent animate-pulse-slow" />
-        <div className="absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow animation-delay-200" />
-        <div className="absolute top-[85%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-blue/10 to-transparent animate-pulse-slow animation-delay-100" />
+        {/* Subtle lines - desktop only */}
+        <div className="hidden md:block absolute top-[20%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-purple/20 to-transparent animate-pulse-slow" />
+        <div className="hidden md:block absolute top-[60%] left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-pink/20 to-transparent animate-pulse-slow animation-delay-200" />
         
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,10,15,0.4)_70%,rgba(10,10,15,0.8)_100%)]" />
         
+        {/* Grid pattern - desktop only */}
         <div 
-          className="absolute inset-0 opacity-[0.015] md:opacity-[0.025]"
+          className="hidden md:block absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `linear-gradient(rgba(168,85,247,0.4) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(168,85,247,0.4) 1px, transparent 1px)`,
             backgroundSize: '50px 50px'
           }}
         />
-        
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
-        }} />
       </div>
 
       <div className="relative z-10">
@@ -346,7 +347,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <img src="/logo-small.png" alt="Me2You" className="h-8 w-auto" />
+                <Image src="/logo-small.png" alt="Me2You" width={32} height={32} className="h-8 w-auto" />
                 <span className="text-gray-600 text-sm">&copy; 2026 Me2You</span>
               </div>
               <div className="flex gap-6">

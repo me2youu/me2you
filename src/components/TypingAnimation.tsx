@@ -11,11 +11,12 @@ export default function TypingAnimation() {
   useEffect(() => {
     const interval = setInterval(() => {
       setFading(true);
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setIndex((prev) => (prev + 1) % phrases.length);
         setFading(false);
       }, 300);
-    }, 1000);
+      return () => clearTimeout(timeout);
+    }, 2500);
 
     return () => clearInterval(interval);
   }, []);

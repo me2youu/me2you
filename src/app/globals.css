@@ -54,16 +54,26 @@ body {
     @apply bg-clip-text text-transparent bg-gradient-to-r;
   }
 
-  /* Glass card */
+  /* Glass card - no blur on mobile for performance */
   .glass {
-    @apply bg-dark-800/50 backdrop-blur-xl border border-white/5;
+    @apply bg-dark-800/60 border border-white/5;
   }
 
-  /* Glass strong */
+  /* Glass strong - no blur on mobile for performance */
   .glass-strong {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Enable backdrop-blur only on desktop (mobile Safari perf killer) */
+  @media (min-width: 768px) {
+    .glass {
+      @apply bg-dark-800/50 backdrop-blur-xl;
+    }
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+    }
   }
 
   /* Glow effects */

@@ -26,12 +26,12 @@ export default function Header() {
           </Link>
 
           {/* Nav links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors ${
+                className={`text-xs sm:text-sm font-medium transition-colors ${
                   pathname === link.href
                     ? 'text-white'
                     : 'text-gray-400 hover:text-white'
@@ -41,16 +41,16 @@ export default function Header() {
               </Link>
             ))}
 
-            <div className="w-px h-5 bg-white/10" />
+            <div className="w-px h-5 bg-white/10 hidden sm:block" />
 
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="text-sm text-gray-400 hover:text-white transition-colors font-medium">
+                <button className="text-xs sm:text-sm text-gray-400 hover:text-white transition-colors font-medium">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="text-sm bg-accent-purple hover:bg-accent-purple/80 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg hover:shadow-accent-purple/25">
+                <button className="text-xs sm:text-sm bg-accent-purple hover:bg-accent-purple/80 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all hover:shadow-lg hover:shadow-accent-purple/25 whitespace-nowrap">
                   Sign Up
                 </button>
               </SignUpButton>
