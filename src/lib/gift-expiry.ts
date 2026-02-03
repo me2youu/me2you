@@ -51,13 +51,19 @@ export function calculateExpiresAt(selectedAddons: any[]): Date | null {
 export async function activateGiftExpiry(giftId: string): Promise<void> {
   try {
     const [gift] = await db
-      .select({ selectedAddons: gifts.selectedAddons })
+      .select({ selectedAddons: gifts.selectedAddons, expiresAt: gifts.expiresAt })
       .from(gifts)
       .where(eq(gifts.id, giftId))
       .limit(1);
 
     if (!gift) {
       console.error(`activateGiftExpiry: Gift ${giftId} not found`);
+      return;
+    }
+
+    // Guard: skip if already activated (prevents race between ITN and confirm)
+    if (gift.expiresAt !== null) {
+      console.log(`activateGiftExpiry: Gift ${giftId} already has expiresAt set, skipping`);
       return;
     }
 
