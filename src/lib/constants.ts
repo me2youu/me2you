@@ -3,6 +3,8 @@
 export const DEV_EMAILS = [
   'anandpatel1221178@gmail.com',
   'luke.renton1@gmail.com',
+  'lucy@simplydivine.co.za',
+  'emiliadup26@gmail.com',
 ];
 
 // Whether payments are live for the public
