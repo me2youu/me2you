@@ -70,6 +70,17 @@ export const orders = pgTable('orders', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Contact queries table
+export const contactQueries = pgTable('contact_queries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  subject: text('subject').notNull(),
+  message: text('message').notNull(),
+  status: text('status').default('new').notNull(), // 'new', 'read', 'replied'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Type exports for TypeScript
 export type User = typeof users.$inferSelect;
 export type Template = typeof templates.$inferSelect;
@@ -82,3 +93,5 @@ export type NewTemplate = typeof templates.$inferInsert;
 export type NewAddon = typeof addons.$inferInsert;
 export type NewGift = typeof gifts.$inferInsert;
 export type NewOrder = typeof orders.$inferInsert;
+export type ContactQuery = typeof contactQueries.$inferSelect;
+export type NewContactQuery = typeof contactQueries.$inferInsert;

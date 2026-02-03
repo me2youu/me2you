@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import HelpBubble from '@/components/HelpBubble';
 import "./globals.css";
 
 const inter = Inter({ 
@@ -40,6 +41,7 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${inter.variable} ${poppins.variable} antialiased`}>
           {children}
+          <HelpBubble />
           <SpeedInsights />
           <Analytics />
         </body>
