@@ -42,6 +42,9 @@ drizzle/
 # clerk configuration (can include secrets)
 /.clerk/
 
+# Google OAuth credentials
+client_secret_*.json
+
 # dev logs and session files
 dev.log
 session-*.md
