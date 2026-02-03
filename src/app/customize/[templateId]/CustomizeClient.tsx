@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { useUploadThing } from '@/lib/uploadthing';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
 import { DEV_EMAILS, isPaymentsLive } from '@/lib/constants';
 
 interface Template {
@@ -260,8 +260,8 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
-  // Payment gate: check if current user is a dev
-  const { user: clerkUser } = useUser();
+  // Auth & payment gate
+  const { user: clerkUser, isSignedIn } = useUser();
   const canPay = isPaymentsLive || DEV_EMAILS.includes(clerkUser?.primaryEmailAddress?.emailAddress ?? '');
 
   // Initialize form data from template variables immediately (no fetch needed)
@@ -1801,7 +1801,15 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                 </span>
               </div>
 
-              {canPay ? (
+              {!isSignedIn ? (
+                <SignInButton mode="modal">
+                  <button
+                    className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all"
+                  >
+                    Sign in to Create & Pay ${totalPrice.toFixed(2)}
+                  </button>
+                </SignInButton>
+              ) : canPay ? (
                 <button
                   onClick={handleCreateGift}
                   disabled={creating || !formData.recipientName?.trim() || (wantCustomUrl && customUrlStatus !== 'available')}

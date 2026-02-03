@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/admin(.*)',
-  '/customize(.*)',
 ]);
 
 // Routes that should skip Clerk entirely (external webhooks with no auth context)
