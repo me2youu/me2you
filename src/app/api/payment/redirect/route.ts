@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generatePayFastPayment } from '@/lib/payfast';
+import { DEV_EMAILS } from '@/lib/constants';
 
 // GET - Creates an order and returns an auto-submitting HTML form to PayFast
 // This mimics exactly how PayFast's PHP SDK works
@@ -77,6 +78,15 @@ export async function GET(request: NextRequest) {
       } catch (e) {
         // Clerk lookup failed, use fallback
       }
+    }
+
+    // Payment gate: block non-dev users when payments aren't live
+    const paymentsLive = process.env.NEXT_PUBLIC_PAYMENTS_LIVE === 'true';
+    if (!paymentsLive && !DEV_EMAILS.includes(userEmail)) {
+      return NextResponse.json(
+        { error: 'Payments are not yet available. We are launching soon!' },
+        { status: 403 }
+      );
     }
 
     // Create order record (in USD)

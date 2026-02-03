@@ -128,7 +128,7 @@ async function TemplateShowcase() {
 const stats = [
   { value: '20+', label: 'Templates' },
   { value: '60s', label: 'To Create' },
-  { value: '$1', label: 'Per Gift' },
+  { value: '$1+', label: 'Per Gift' },
   { value: '100%', label: 'Smiles' },
 ];
 

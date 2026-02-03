@@ -26,6 +26,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchGifts();
+
+    // Sync promotional email preference from sign-up page (stored in localStorage)
+    const promoPref = localStorage.getItem('me2you_promo_emails');
+    if (promoPref !== null) {
+      localStorage.removeItem('me2you_promo_emails');
+      // Only call API if they opted out (default is true in DB)
+      if (promoPref === 'false') {
+        fetch('/api/user/preferences', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promotionalEmails: false }),
+        }).catch(() => {}); // Fire and forget
+      }
+    }
   }, []);
 
   async function fetchGifts() {

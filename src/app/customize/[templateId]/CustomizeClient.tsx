@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { useUploadThing } from '@/lib/uploadthing';
+import { useUser } from '@clerk/nextjs';
+import { DEV_EMAILS, isPaymentsLive } from '@/lib/constants';
 
 interface Template {
   id: string;
@@ -257,6 +259,10 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
   const [template] = useState<Template>(initialTemplate);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+
+  // Payment gate: check if current user is a dev
+  const { user: clerkUser } = useUser();
+  const canPay = isPaymentsLive || DEV_EMAILS.includes(clerkUser?.primaryEmailAddress?.emailAddress ?? '');
 
   // Initialize form data from template variables immediately (no fetch needed)
   const [formData, setFormData] = useState<Record<string, string>>(() => {
@@ -1795,13 +1801,32 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                 </span>
               </div>
 
-              <button
-                onClick={handleCreateGift}
-                disabled={creating || !formData.recipientName?.trim() || (wantCustomUrl && customUrlStatus !== 'available')}
-                className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {creating ? 'Processing...' : `Create & Pay $${totalPrice.toFixed(2)}`}
-              </button>
+              {canPay ? (
+                <button
+                  onClick={handleCreateGift}
+                  disabled={creating || !formData.recipientName?.trim() || (wantCustomUrl && customUrlStatus !== 'available')}
+                  className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? 'Processing...' : `Create & Pay $${totalPrice.toFixed(2)}`}
+                </button>
+              ) : (
+                <div className="w-full rounded-xl border border-accent-purple/20 bg-accent-purple/5 p-5 text-center space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-accent-purple">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-semibold text-lg">We&apos;re almost ready!</span>
+                  </div>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Payments will be available shortly. Sign up to be the first to know when we go live.
+                  </p>
+                  <div className="pt-1">
+                    <span className="inline-block bg-dark-700 text-gray-500 py-3 px-8 rounded-lg font-semibold text-sm cursor-not-allowed">
+                      Coming Soon
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

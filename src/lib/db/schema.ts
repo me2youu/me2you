@@ -10,6 +10,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   totalSpent: decimal('total_spent', { precision: 10, scale: 2 }).default('0'),
+  promotionalEmails: boolean('promotional_emails').default(true).notNull(),
 });
 
 // Templates table
