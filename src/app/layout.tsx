@@ -3,11 +3,8 @@ import { Inter, Poppins } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
-import dynamic from 'next/dynamic';
+import HelpBubble from '@/components/HelpBubble';
 import "./globals.css";
-
-// Lazy-load HelpBubble — not needed for first paint
-const HelpBubble = dynamic(() => import('@/components/HelpBubble'), { ssr: false });
 
 const inter = Inter({ 
   subsets: ["latin"],

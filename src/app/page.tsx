@@ -1,16 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import TypingAnimation from "@/components/TypingAnimation";
+import HomeEffects from "@/components/HomeEffects";
 import { db } from "@/lib/db";
 import { templates } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
-
-// Lazy-load desktop-only effects — zero impact on mobile LCP
-const HomeEffects = dynamic(() => import("@/components/HomeEffects"), { ssr: false });
 
 // Revalidate every 1 hour (templates don't change often)
 export const revalidate = 3600;
