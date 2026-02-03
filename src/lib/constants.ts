@@ -5,6 +5,8 @@ export const DEV_EMAILS = [
   'luke.renton1@gmail.com',
   'lucy@simplydivine.co.za',
   'emiliadup26@gmail.com',
+  'shantye0609@gmail.com',
+  'jlouw143@icloud.com',
 ];
 
 // Whether payments are live for the public
