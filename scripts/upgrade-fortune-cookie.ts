@@ -42,6 +42,9 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       border-radius: 50%;
       animation: glow 4s ease-in-out infinite;
     }
+    @media (min-width: 768px) {
+      .ambient::before { width: 500px; height: 500px; }
+    }
     @keyframes glow {
       0%,100% { transform: translate(-50%,-50%) scale(1); opacity:.5; }
       50% { transform: translate(-50%,-50%) scale(1.3); opacity:1; }
@@ -50,19 +53,26 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
     .container {
       text-align: center;
       width: 100%;
-      max-width: 420px;
+      max-width: 500px;
       position: relative;
       z-index: 1;
     }
+    @media (min-width: 768px) {
+      .container { max-width: 600px; }
+    }
 
-    .header { margin-bottom: 1.2rem; }
+    .header { margin-bottom: 1.5rem; }
     .subtitle {
       font-size: .85rem; color: #666;
       text-transform: uppercase; letter-spacing: 2px;
       margin-bottom: .4rem;
     }
+    @media (min-width: 768px) {
+      .subtitle { font-size: 1rem; letter-spacing: 3px; }
+      .header { margin-bottom: 2rem; }
+    }
     .name {
-      font-size: clamp(1.5rem,6vw,2.2rem);
+      font-size: clamp(1.5rem,6vw,3rem);
       font-weight: 800;
       background: linear-gradient(135deg,#d4a056,#eab308,#d4a056);
       background-size: 200% 200%;
@@ -81,9 +91,16 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       position: relative;
       width: clamp(140px, 40vw, 200px);
       height: clamp(140px, 40vw, 200px);
-      margin: 0 auto 1rem;
+      margin: 0 auto 1.5rem;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+    }
+    @media (min-width: 768px) {
+      .cookie-wrap {
+        width: 280px;
+        height: 280px;
+        margin: 0 auto 2rem;
+      }
     }
 
     /* Whole cookie (shown before crack) */
@@ -151,6 +168,9 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       margin-bottom: 1.5rem;
       transition: opacity .5s;
     }
+    @media (min-width: 768px) {
+      .hint { font-size: 1rem; margin-bottom: 2rem; }
+    }
     .hint-tap {
       display: inline-block;
       animation: tap 1.2s ease-in-out infinite;
@@ -183,6 +203,9 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       overflow: hidden;
       box-shadow: 0 10px 40px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.2);
     }
+    @media (min-width: 768px) {
+      .fortune-inner { padding: 2.5rem 2rem; border-radius: 18px; }
+    }
     .fortune-inner::before {
       content:'';
       position: absolute; inset:0;
@@ -196,7 +219,7 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       background: linear-gradient(90deg,#d4453b,#c0392b);
     }
     .fortune-text {
-      font-size: clamp(1rem,4vw,1.2rem);
+      font-size: clamp(1rem,4vw,1.35rem);
       line-height: 1.7;
       color: #2c1810;
       font-style: italic;
@@ -205,6 +228,10 @@ const upgradedFortuneCookie = `<!DOCTYPE html>
       overflow-wrap: break-word;
     }
     .q { color: #d4453b; font-size: 1.5rem; font-style: normal; vertical-align: -4px; }
+    @media (min-width: 768px) {
+      .fortune-text { font-size: 1.4rem; }
+      .q { font-size: 1.8rem; }
+    }
 
     /* Lucky numbers */
     .lucky { display: none; margin-top: 1rem; padding-top: .75rem; border-top: 1px dashed rgba(0,0,0,.1); }
