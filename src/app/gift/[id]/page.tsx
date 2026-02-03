@@ -110,10 +110,11 @@ export default async function GiftPage({
   incrementViewCount(gift.id);
 
   return (
-    <div
-      style={{ width: '100%', height: '100%', minHeight: '100vh' }}
-      dangerouslySetInnerHTML={{ __html: gift.htmlSnapshot }}
-      suppressHydrationWarning
+    <iframe
+      srcDoc={gift.htmlSnapshot}
+      style={{ width: '100%', height: '100vh', border: 'none', display: 'block' }}
+      title={`Gift for ${gift.recipientName}`}
+      sandbox="allow-scripts allow-same-origin"
     />
   );
 }

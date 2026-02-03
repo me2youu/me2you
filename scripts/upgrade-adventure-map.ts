@@ -42,13 +42,14 @@ const upgradedAdventureMap = `<!DOCTYPE html>
     .bg-heart {
       position: absolute;
       opacity: 0;
-      animation: floatHeart var(--dur, 8s) ease-in-out infinite var(--del, 0s);
+      animation: floatPlane var(--dur, 8s) ease-in-out infinite var(--del, 0s);
     }
-    @keyframes floatHeart {
-      0% { opacity: 0; transform: translateY(100vh) scale(0.5) rotate(0deg); }
+    @keyframes floatPlane {
+      0% { opacity: 0; transform: translate(-10vw, 80vh) scale(0.6) rotate(-15deg); }
       10% { opacity: var(--op, 0.15); }
+      50% { transform: translate(50vw, 30vh) scale(0.9) rotate(5deg); }
       90% { opacity: var(--op, 0.15); }
-      100% { opacity: 0; transform: translateY(-10vh) scale(1) rotate(25deg); }
+      100% { opacity: 0; transform: translate(110vw, -10vh) scale(0.7) rotate(15deg); }
     }
     
     .header {
@@ -380,16 +381,16 @@ const upgradedAdventureMap = `<!DOCTYPE html>
   <div class="bg-hearts" id="bgHearts"></div>
   
   <header class="header">
-    <div class="header-hearts">\u2764\uFE0F \u2764\uFE0F \u2764\uFE0F</div>
+    <div class="header-hearts">\u2708\uFE0F \u2764\uFE0F \u2708\uFE0F</div>
     <h1 class="title">Our Adventure Map</h1>
     <p class="subtitle">The journey of {{senderName}} & {{recipientName}}</p>
   </header>
   
   <div class="map-container">
     <div class="path-line"></div>
-    <div class="path-heart" style="top:20%">\u2665</div>
-    <div class="path-heart" style="top:45%">\u2665</div>
-    <div class="path-heart" style="top:70%">\u2665</div>
+    <div class="path-heart" style="top:20%">\u2708</div>
+    <div class="path-heart" style="top:45%">\u2708</div>
+    <div class="path-heart" style="top:70%">\u2708</div>
     
     <div class="locations">
       <div class="location">
@@ -472,13 +473,13 @@ const upgradedAdventureMap = `<!DOCTYPE html>
       }
     });
     
-    // Generate floating background hearts
+    // Generate floating background planes
     var bgHearts = document.getElementById('bgHearts');
-    var heartChars = ['\\u2665','\\u2764\\uFE0F','\\uD83E\\uDE77','\\uD83D\\uDC95'];
+    var planeChars = ['\\u2708\\uFE0F','\\uD83D\\uDEEB','\\uD83D\\uDEEC','\\uD83D\\uDE81'];
     for (var i = 0; i < 12; i++) {
       var h = document.createElement('div');
       h.className = 'bg-heart';
-      h.textContent = heartChars[i % heartChars.length];
+      h.textContent = planeChars[i % planeChars.length];
       h.style.cssText = 'left:' + (Math.random() * 95) + '%;font-size:' + (0.8 + Math.random() * 1) + 'rem;--dur:' + (7 + Math.random() * 8) + 's;--del:' + (Math.random() * 10) + 's;--op:' + (0.08 + Math.random() * 0.12);
       bgHearts.appendChild(h);
     }
