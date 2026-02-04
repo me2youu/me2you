@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 export default function HelpBubble() {
+  const pathname = usePathname();
+
+  // Hide on gift pages — don't cover the gift content
+  if (pathname?.startsWith('/gift/')) return null;
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
