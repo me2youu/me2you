@@ -16,21 +16,24 @@ declare module '@paystack/inline-js' {
     onError?: (error: Error) => void;
   }
 
+  interface CheckoutOptions {
+    key: string;
+    email: string;
+    amount: number;
+    ref?: string;
+    currency?: string;
+    channels?: string[];
+    metadata?: Record<string, any>;
+    onSuccess?: (response: TransactionResponse) => void;
+    onCancel?: () => void;
+    onError?: (error: Error) => void;
+  }
+
   class PaystackPop {
     constructor();
     resumeTransaction(accessCode: string, options?: PaystackPopOptions): void;
-    newTransaction(options: {
-      key: string;
-      email: string;
-      amount: number;
-      ref?: string;
-      currency?: string;
-      channels?: string[];
-      metadata?: Record<string, any>;
-      onSuccess?: (response: TransactionResponse) => void;
-      onCancel?: () => void;
-      onError?: (error: Error) => void;
-    }): void;
+    newTransaction(options: CheckoutOptions): void;
+    checkout(options: CheckoutOptions): Promise<void>;
   }
 
   export default PaystackPop;

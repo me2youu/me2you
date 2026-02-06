@@ -3,11 +3,11 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { initializeTransaction, generateReference, isPaystackTestMode } from '@/lib/paystack';
+import { generateReference, isPaystackTestMode } from '@/lib/paystack';
 import { DEV_EMAILS } from '@/lib/constants';
 
-// POST - Initialize a Paystack transaction
-// Returns access_code for frontend popup
+// POST - Prepare payment data for client-side checkout
+// Returns payment details for Paystack checkout() which supports Apple Pay
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -110,28 +110,15 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    // Initialize Paystack transaction
-    const response = await initializeTransaction({
+    // Return payment details for client-side checkout (supports Apple Pay)
+    return NextResponse.json({
+      reference,
       email: userEmail,
       amount: amountCents,
-      reference,
       currency,
-      callbackUrl: `${appUrl}/payment/success?reference=${reference}&giftId=${giftData.id}`,
-      metadata: {
-        orderId: order.id,
-        giftId: giftData.id,
-        recipientName: giftData.recipientName,
-      },
-    });
-
-    return NextResponse.json({
-      access_code: response.data.access_code,
-      authorization_url: response.data.authorization_url,
-      reference: response.data.reference,
       orderId: order.id,
       giftId: giftData.id,
+      publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
     });
   } catch (error: any) {
     console.error('Payment initialize error:', error.message, error);

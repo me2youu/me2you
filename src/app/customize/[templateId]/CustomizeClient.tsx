@@ -567,12 +567,18 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
         throw new Error(data.error || 'Failed to initialize payment');
       }
 
-      const { access_code, reference, giftId: returnedGiftId } = await paymentResponse.json();
+      const { reference, email, amount, currency, giftId: returnedGiftId, publicKey } = await paymentResponse.json();
 
       // 3. Dynamically import Paystack to avoid SSR issues
+      // Using checkout() instead of resumeTransaction() to support Apple Pay on iOS/Safari
       const PaystackPop = (await import('@paystack/inline-js')).default;
       const popup = new PaystackPop();
-      popup.resumeTransaction(access_code, {
+      await popup.checkout({
+        key: publicKey,
+        email,
+        amount,
+        currency,
+        ref: reference,
         onSuccess: () => {
           // Redirect to success page
           window.location.href = `/payment/success?reference=${reference}&giftId=${returnedGiftId}`;

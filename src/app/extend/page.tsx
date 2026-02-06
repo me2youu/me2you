@@ -113,12 +113,18 @@ function ExtendContent() {
         throw new Error(data.error || 'Failed to initialize extension payment');
       }
 
-      const { access_code, reference, giftId: returnedGiftId } = await response.json();
+      const { reference, email, amount, currency, giftId: returnedGiftId, publicKey } = await response.json();
 
       // Dynamically import Paystack to avoid SSR issues
+      // Using checkout() to support Apple Pay on iOS/Safari
       const PaystackPop = (await import('@paystack/inline-js')).default;
       const popup = new PaystackPop();
-      popup.resumeTransaction(access_code, {
+      await popup.checkout({
+        key: publicKey,
+        email,
+        amount,
+        currency,
+        ref: reference,
         onSuccess: () => {
           // Redirect to success page
           window.location.href = `/payment/success?reference=${reference}&giftId=${returnedGiftId}&extension=true`;

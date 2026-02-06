@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { initializeTransaction, generateReference, isPaystackTestMode } from '@/lib/paystack';
+import { generateReference, isPaystackTestMode } from '@/lib/paystack';
 import { DURATION_OPTIONS, type DurationKey } from '@/lib/gift-expiry';
 
 // Price of each tier (for calculating upgrade cost)
@@ -102,7 +102,6 @@ export async function POST(request: NextRequest) {
       .where(eq(gifts.id, giftId));
 
     // Get user email
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     let userEmail = 'guest@me2you.world';
     try {
       const clerk = await clerkClient();
@@ -135,29 +134,15 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // Initialize Paystack transaction
-    const durationLabel = DURATION_OPTIONS[duration].label;
-    const response = await initializeTransaction({
+    // Return payment details for client-side checkout (supports Apple Pay)
+    return NextResponse.json({
+      reference,
       email: userEmail,
       amount: amountCents,
-      reference,
       currency,
-      callbackUrl: `${appUrl}/payment/success?reference=${reference}&giftId=${gift.id}&extension=true`,
-      metadata: {
-        orderId: order.id,
-        giftId: gift.id,
-        extension: true,
-        duration,
-        recipientName: gift.recipientName,
-      },
-    });
-
-    return NextResponse.json({
-      access_code: response.data.access_code,
-      authorization_url: response.data.authorization_url,
-      reference: response.data.reference,
       orderId: order.id,
       giftId: gift.id,
+      publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
     });
   } catch (error: any) {
     console.error('Extension payment error:', error);
