@@ -2,27 +2,17 @@
 // Uses exchangerate-api.com (free, no API key required)
 
 const FALLBACK_RATE = 18.5; // Fallback USD→ZAR rate if API fails
-const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour cache
-
-let cachedRate: number | null = null;
-let cachedAt: number = 0;
 
 /**
  * Fetch the current USD→ZAR exchange rate.
- * Uses in-memory cache (1 hour TTL). Falls back to stale cache or hardcoded rate on failure.
+ * Fetches fresh rate on every call to avoid fluctuation issues.
+ * Falls back to hardcoded rate on failure.
  */
 export async function getUsdToZarRate(): Promise<number> {
-  const now = Date.now();
-
-  // Return cached rate if still fresh
-  if (cachedRate !== null && now - cachedAt < CACHE_DURATION_MS) {
-    return cachedRate;
-  }
-
   try {
     const response = await fetch(
       'https://api.exchangerate-api.com/v4/latest/USD',
-      { next: { revalidate: 3600 } } // Next.js fetch cache
+      { cache: 'no-store' } // Always fetch fresh
     );
 
     if (!response.ok) {
@@ -36,18 +26,10 @@ export async function getUsdToZarRate(): Promise<number> {
       throw new Error('Invalid ZAR rate in API response');
     }
 
-    cachedRate = rate;
-    cachedAt = now;
-    console.log(`Exchange rate updated: 1 USD = ${rate} ZAR`);
+    console.log(`Exchange rate: 1 USD = ${rate} ZAR`);
     return rate;
   } catch (error) {
     console.error('Failed to fetch exchange rate, using fallback:', error);
-
-    // Prefer stale cached rate over hardcoded fallback
-    if (cachedRate !== null) {
-      return cachedRate;
-    }
-
     return FALLBACK_RATE;
   }
 }
