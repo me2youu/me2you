@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { initializeTransaction, generateReference } from '@/lib/paystack';
+import { initializeTransaction, generateReference, isPaystackTestMode } from '@/lib/paystack';
 import { DURATION_OPTIONS, type DurationKey } from '@/lib/gift-expiry';
 
 // Price of each tier (for calculating upgrade cost)
@@ -115,10 +115,13 @@ export async function POST(request: NextRequest) {
     // Generate unique reference
     const reference = generateReference('ext');
 
-    // Convert to cents
-    const amountCents = Math.round(upgradePrice * 100);
+    // Use ZAR for test mode (Paystack test keys only support local currency)
+    const USD_TO_ZAR = 18;
+    const currency = isPaystackTestMode ? 'ZAR' : 'USD';
+    const amount = isPaystackTestMode ? upgradePrice * USD_TO_ZAR : upgradePrice;
+    const amountCents = Math.round(amount * 100);
 
-    // Create order
+    // Create order (always store in USD for consistency)
     const [order] = await db
       .insert(orders)
       .values({
@@ -138,7 +141,7 @@ export async function POST(request: NextRequest) {
       email: userEmail,
       amount: amountCents,
       reference,
-      currency: 'USD',
+      currency,
       callbackUrl: `${appUrl}/payment/success?reference=${reference}&giftId=${gift.id}&extension=true`,
       metadata: {
         orderId: order.id,

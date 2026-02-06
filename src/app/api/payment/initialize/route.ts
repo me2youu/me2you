@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { initializeTransaction, generateReference } from '@/lib/paystack';
+import { initializeTransaction, generateReference, isPaystackTestMode } from '@/lib/paystack';
 import { DEV_EMAILS } from '@/lib/constants';
 
 // POST - Initialize a Paystack transaction
@@ -89,10 +89,14 @@ export async function POST(request: NextRequest) {
     // Generate unique reference
     const reference = generateReference();
 
-    // Convert USD to cents (Paystack expects amounts in smallest unit)
-    const amountCents = Math.round(amountUSD * 100);
+    // Use ZAR for test mode (Paystack test keys only support local currency)
+    // Rough conversion: 1 USD ≈ 18 ZAR (adjust as needed)
+    const USD_TO_ZAR = 18;
+    const currency = isPaystackTestMode ? 'ZAR' : 'USD';
+    const amount = isPaystackTestMode ? amountUSD * USD_TO_ZAR : amountUSD;
+    const amountCents = Math.round(amount * 100);
 
-    // Create order record
+    // Create order record (always store in USD for consistency)
     const [order] = await db
       .insert(orders)
       .values({
@@ -113,7 +117,7 @@ export async function POST(request: NextRequest) {
       email: userEmail,
       amount: amountCents,
       reference,
-      currency: 'USD',
+      currency,
       callbackUrl: `${appUrl}/payment/success?reference=${reference}&giftId=${giftData.id}`,
       metadata: {
         orderId: order.id,

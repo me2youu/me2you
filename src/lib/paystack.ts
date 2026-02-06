@@ -2,6 +2,9 @@ import crypto from 'crypto';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
+// Check if we're using test keys (test mode only supports ZAR)
+export const isPaystackTestMode = PAYSTACK_SECRET_KEY.startsWith('sk_test_');
+
 interface InitializeTransactionParams {
   email: string;
   amount: number; // in cents (e.g., 100 = $1.00)
