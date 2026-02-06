@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateReference, isPaystackTestMode } from '@/lib/paystack';
+import { generateReference } from '@/lib/paystack';
 import { DEV_EMAILS } from '@/lib/constants';
 
 // POST - Prepare payment data for client-side checkout
@@ -89,12 +89,8 @@ export async function POST(request: NextRequest) {
     // Generate unique reference
     const reference = generateReference();
 
-    // Use ZAR for test mode (Paystack test keys only support local currency)
-    // Rough conversion: 1 USD ≈ 18 ZAR (adjust as needed)
-    const USD_TO_ZAR = 18;
-    const currency = isPaystackTestMode ? 'ZAR' : 'USD';
-    const amount = isPaystackTestMode ? amountUSD * USD_TO_ZAR : amountUSD;
-    const amountCents = Math.round(amount * 100);
+    // Amount in cents (USD)
+    const amountCents = Math.round(amountUSD * 100);
 
     // Create order record (always store in USD for consistency)
     const [order] = await db
@@ -115,7 +111,7 @@ export async function POST(request: NextRequest) {
       reference,
       email: userEmail,
       amount: amountCents,
-      currency,
+      currency: 'USD',
       orderId: order.id,
       giftId: giftData.id,
       publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
