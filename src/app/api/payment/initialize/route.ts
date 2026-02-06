@@ -5,6 +5,7 @@ import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateReference } from '@/lib/paystack';
 import { DEV_EMAILS } from '@/lib/constants';
+import { convertUsdToZar } from '@/lib/exchange-rate';
 
 // POST - Prepare payment data for client-side checkout
 // Returns payment details for Paystack checkout() which supports Apple Pay
@@ -89,9 +90,8 @@ export async function POST(request: NextRequest) {
     // Generate unique reference
     const reference = generateReference();
 
-    // South Africa Paystack only supports ZAR - convert from USD pricing
-    const USD_TO_ZAR = 18;
-    const amountZAR = amountUSD * USD_TO_ZAR;
+    // South Africa Paystack only supports ZAR - convert using live exchange rate
+    const amountZAR = await convertUsdToZar(amountUSD);
     const amountCents = Math.round(amountZAR * 100);
 
     // Create order record (always store in USD for consistency)

@@ -5,6 +5,7 @@ import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateReference } from '@/lib/paystack';
 import { DURATION_OPTIONS, type DurationKey } from '@/lib/gift-expiry';
+import { convertUsdToZar } from '@/lib/exchange-rate';
 
 // Price of each tier (for calculating upgrade cost)
 const TIER_PRICES: Record<string, number> = {
@@ -114,9 +115,8 @@ export async function POST(request: NextRequest) {
     // Generate unique reference
     const reference = generateReference('ext');
 
-    // South Africa Paystack only supports ZAR - convert from USD pricing
-    const USD_TO_ZAR = 18;
-    const amountZAR = upgradePrice * USD_TO_ZAR;
+    // South Africa Paystack only supports ZAR - convert using live exchange rate
+    const amountZAR = await convertUsdToZar(upgradePrice);
     const amountCents = Math.round(amountZAR * 100);
 
     // Create order (always store in USD for consistency)
