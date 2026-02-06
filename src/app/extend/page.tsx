@@ -257,13 +257,21 @@ function ExtendContent() {
 
                 {/* Extend button */}
                 {availableOptions.length > 0 && (
-                  <button
-                    onClick={handleExtend}
-                    disabled={!selectedDuration || extending}
-                    className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {extending ? 'Redirecting...' : selectedDuration ? `Extend for $${getUpgradePrice(selectedDuration).toFixed(2)}` : 'Select a duration'}
-                  </button>
+                  <>
+                    <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Payment processed in South African Rand (ZAR) at current exchange rate.
+                    </p>
+                    <button
+                      onClick={handleExtend}
+                      disabled={!selectedDuration || extending}
+                      className="w-full bg-gradient-to-r from-accent-purple to-accent-pink text-white py-3.5 rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-accent-purple/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {extending ? 'Redirecting...' : selectedDuration ? `Extend for $${getUpgradePrice(selectedDuration).toFixed(2)}` : 'Select a duration'}
+                    </button>
+                  </>
                 )}
               </>
             )}

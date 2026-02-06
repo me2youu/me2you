@@ -1803,7 +1803,7 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
 
             {/* Actions */}
             <div className="border-t border-white/5 pt-6">
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center justify-between mb-3">
                 <div>
                   <span className="text-2xl font-bold text-gradient bg-gradient-to-r from-accent-purple to-accent-pink">
                     ${totalPrice.toFixed(2)}
@@ -1830,6 +1830,13 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
                   Secure Checkout
                 </span>
               </div>
+              
+              <p className="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Payment processed in South African Rand (ZAR) at current exchange rate. We&apos;re a South African company.
+              </p>
 
               {!isSignedIn ? (
                 <SignInButton mode="modal">
