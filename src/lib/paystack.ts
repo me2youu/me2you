@@ -60,12 +60,14 @@ export async function initializeTransaction(params: InitializeTransactionParams)
     }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to initialize transaction');
+  const data = await response.json();
+  
+  if (!response.ok || !data.status) {
+    console.error('Paystack init error:', data);
+    throw new Error(data.message || 'Failed to initialize transaction');
   }
 
-  return response.json();
+  return data;
 }
 
 /**

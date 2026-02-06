@@ -130,9 +130,9 @@ export async function POST(request: NextRequest) {
       giftId: giftData.id,
     });
   } catch (error: any) {
-    console.error('Payment initialize error:', error);
+    console.error('Payment initialize error:', error.message, error);
     return NextResponse.json(
-      { error: error.message || 'Failed to initialize payment' },
+      { error: error.message || 'Failed to initialize payment', details: String(error) },
       { status: 500 }
     );
   }
