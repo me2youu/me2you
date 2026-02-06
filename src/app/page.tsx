@@ -356,6 +356,12 @@ export default function Home() {
                 <a href="#how-it-works" className="text-gray-500 hover:text-white text-sm transition-colors">
                   How It Works
                 </a>
+                <Link href="/policies" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Policies
+                </Link>
+                <Link href="/contact" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Contact
+                </Link>
               </div>
             </div>
           </div>
