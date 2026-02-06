@@ -8,7 +8,7 @@ const isProtectedRoute = createRouteMatcher([
 
 // Routes that should skip Clerk entirely (external webhooks with no auth context)
 const isWebhookRoute = createRouteMatcher([
-  '/api/payment/notify',
+  '/api/payment/webhook',
   '/api/webhooks(.*)',
 ]);
 

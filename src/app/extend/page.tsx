@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import PaystackPop from '@paystack/inline-js';
 
 interface GiftData {
   id: string;
@@ -98,9 +99,35 @@ function ExtendContent() {
   async function handleExtend() {
     if (!selectedDuration || !giftId) return;
     setExtending(true);
+    setError('');
+    
     try {
-      // Redirect to extension payment
-      window.location.href = `/api/extend?giftId=${giftId}&duration=${selectedDuration}`;
+      // Initialize extension payment
+      const response = await fetch('/api/extend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ giftId, duration: selectedDuration }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to initialize extension payment');
+      }
+
+      const { access_code, reference, giftId: returnedGiftId } = await response.json();
+
+      // Open Paystack popup
+      const popup = new PaystackPop();
+      popup.resumeTransaction(access_code, {
+        onSuccess: () => {
+          // Redirect to success page
+          window.location.href = `/payment/success?reference=${reference}&giftId=${returnedGiftId}&extension=true`;
+        },
+        onCancel: () => {
+          setError('Payment was cancelled. You can try again.');
+          setExtending(false);
+        },
+      });
     } catch (err: any) {
       setError(err.message);
       setExtending(false);

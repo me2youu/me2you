@@ -63,7 +63,7 @@ export const orders = pgTable('orders', {
   giftId: varchar('gift_id', { length: 12 }).references(() => gifts.id).notNull(),
   userId: text('user_id'), // Nullable for guest checkouts
   email: text('email').notNull(),
-  payfastPaymentId: text('payfast_payment_id'), // PayFast pf_payment_id
+  paystackReference: text('paystack_reference'), // Paystack transaction reference
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').default('usd').notNull(),
   status: text('status').notNull(), // 'pending', 'completed', 'failed', 'cancelled'

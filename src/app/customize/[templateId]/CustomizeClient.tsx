@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import { useUploadThing } from '@/lib/uploadthing';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { DEV_EMAILS, isPaymentsLive } from '@/lib/constants';
+import PaystackPop from '@paystack/inline-js';
 
 interface Template {
   id: string;
@@ -555,11 +556,34 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
 
       const gift = await response.json();
 
-      // 2. Redirect to server-side PayFast form (handles signature + form submission)
-      window.location.href = `/api/payment/redirect?giftId=${gift.id}`;
+      // 2. Initialize Paystack payment
+      const paymentResponse = await fetch('/api/payment/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ giftId: gift.id }),
+      });
+
+      if (!paymentResponse.ok) {
+        const data = await paymentResponse.json();
+        throw new Error(data.error || 'Failed to initialize payment');
+      }
+
+      const { access_code, reference, giftId: returnedGiftId } = await paymentResponse.json();
+
+      // 3. Open Paystack popup
+      const popup = new PaystackPop();
+      popup.resumeTransaction(access_code, {
+        onSuccess: () => {
+          // Redirect to success page
+          window.location.href = `/payment/success?reference=${reference}&giftId=${returnedGiftId}`;
+        },
+        onCancel: () => {
+          setError('Payment was cancelled. You can try again.');
+          setCreating(false);
+        },
+      });
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setCreating(false);
     }
   };

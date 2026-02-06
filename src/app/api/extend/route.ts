@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { gifts, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { generatePayFastPayment } from '@/lib/payfast';
+import { initializeTransaction, generateReference } from '@/lib/paystack';
 import { DURATION_OPTIONS, type DurationKey } from '@/lib/gift-expiry';
 
 // Price of each tier (for calculating upgrade cost)
@@ -29,24 +29,23 @@ function getCurrentTier(selectedAddons: any[]): string {
   return '24h';
 }
 
-// GET - Creates an extension order and redirects to PayFast
-export async function GET(request: NextRequest) {
+// POST - Initialize extension payment with Paystack
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const giftId = searchParams.get('giftId');
-    const duration = searchParams.get('duration') as DurationKey;
+    const body = await request.json();
+    const { giftId, duration } = body as { giftId: string; duration: DurationKey };
 
     if (!giftId || !duration) {
-      return new NextResponse('Missing giftId or duration', { status: 400 });
+      return NextResponse.json({ error: 'Missing giftId or duration' }, { status: 400 });
     }
 
     if (!DURATION_OPTIONS[duration]) {
-      return new NextResponse('Invalid duration', { status: 400 });
+      return NextResponse.json({ error: 'Invalid duration' }, { status: 400 });
     }
 
     // Fetch the gift
@@ -63,17 +62,17 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (!gift) {
-      return new NextResponse('Gift not found', { status: 404 });
+      return NextResponse.json({ error: 'Gift not found' }, { status: 404 });
     }
 
     // Verify ownership
     if (gift.createdBy !== userId) {
-      return new NextResponse('Unauthorized - not your gift', { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized - not your gift' }, { status: 403 });
     }
 
     // Check if already lifetime
     if (!gift.expiresAt) {
-      return new NextResponse('Gift is already lifetime', { status: 400 });
+      return NextResponse.json({ error: 'Gift is already lifetime' }, { status: 400 });
     }
 
     // Calculate upgrade price
@@ -82,7 +81,7 @@ export async function GET(request: NextRequest) {
     const targetOrder = TIER_ORDER[duration] ?? 0;
 
     if (targetOrder <= currentOrder) {
-      return new NextResponse('Cannot downgrade duration', { status: 400 });
+      return NextResponse.json({ error: 'Cannot downgrade duration' }, { status: 400 });
     }
 
     const currentPrice = TIER_PRICES[currentTier] ?? 0;
@@ -90,7 +89,7 @@ export async function GET(request: NextRequest) {
     const upgradePrice = Math.max(0, targetPrice - currentPrice);
 
     if (upgradePrice <= 0) {
-      return new NextResponse('No payment needed', { status: 400 });
+      return NextResponse.json({ error: 'No payment needed' }, { status: 400 });
     }
 
     // Push extension addon to gift's selectedAddons
@@ -104,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Get user email
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    let userEmail = 'guest@me2you.co.za';
+    let userEmail = 'guest@me2you.world';
     try {
       const clerk = await clerkClient();
       const user = await clerk.users.getUser(userId);
@@ -112,6 +111,12 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       // fallback
     }
+
+    // Generate unique reference
+    const reference = generateReference('ext');
+
+    // Convert to cents
+    const amountCents = Math.round(upgradePrice * 100);
 
     // Create order
     const [order] = await db
@@ -123,51 +128,39 @@ export async function GET(request: NextRequest) {
         amount: String(upgradePrice),
         currency: 'usd',
         status: 'pending',
+        paystackReference: reference,
       })
       .returning();
 
-    // Generate PayFast payment
+    // Initialize Paystack transaction
     const durationLabel = DURATION_OPTIONS[duration].label;
-    const payment = generatePayFastPayment({
-      orderId: order.id,
-      amount: upgradePrice,
+    const response = await initializeTransaction({
+      email: userEmail,
+      amount: amountCents,
+      reference,
       currency: 'USD',
-      itemName: `Me2You Extension: ${durationLabel} for ${gift.recipientName}`,
-      itemDescription: `Extend gift duration to ${durationLabel}`,
-      emailAddress: userEmail !== 'guest@me2you.co.za' ? userEmail : undefined,
-      returnUrl: `${appUrl}/payment/success?orderId=${order.id}&giftId=${gift.id}&extension=true`,
-      cancelUrl: `${appUrl}/dashboard`,
-      notifyUrl: `${appUrl}/api/payment/notify`,
+      callbackUrl: `${appUrl}/payment/success?reference=${reference}&giftId=${gift.id}&extension=true`,
+      metadata: {
+        orderId: order.id,
+        giftId: gift.id,
+        extension: true,
+        duration,
+        recipientName: gift.recipientName,
+      },
     });
 
-    // Build auto-submit form
-    let formHtml = `<form id="pf" action="${payment.paymentUrl}" method="post">`;
-    for (const [name, value] of Object.entries(payment.paymentData)) {
-      const escaped = String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-      formHtml += `<input name="${name}" type="hidden" value="${escaped}" />`;
-    }
-    formHtml += '</form>';
-
-    const html = `<!DOCTYPE html>
-<html>
-<head><title>Redirecting to PayFast...</title></head>
-<body style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0f;color:#fff;font-family:sans-serif;">
-  <div style="text-align:center;">
-    <p>Redirecting to PayFast...</p>
-    <p style="color:#888;font-size:14px;">Extending gift duration to ${durationLabel}</p>
-    ${formHtml}
-    <button onclick="document.getElementById('pf').submit()" style="margin-top:16px;padding:12px 32px;background:#a855f7;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Pay Now</button>
-    <script>document.getElementById('pf').submit();</script>
-  </div>
-</body>
-</html>`;
-
-    return new NextResponse(html, {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' },
+    return NextResponse.json({
+      access_code: response.data.access_code,
+      authorization_url: response.data.authorization_url,
+      reference: response.data.reference,
+      orderId: order.id,
+      giftId: gift.id,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Extension payment error:', error);
-    return new NextResponse('Extension error', { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Extension error' },
+      { status: 500 }
+    );
   }
 }

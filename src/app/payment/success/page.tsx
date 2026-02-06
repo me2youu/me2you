@@ -8,38 +8,48 @@ import Header from '@/components/Header';
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const giftId = searchParams.get('giftId');
-  const orderId = searchParams.get('orderId');
+  const reference = searchParams.get('reference');
   const [copied, setCopied] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [verified, setVerified] = useState(false);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const giftUrl = `${appUrl}/gift/${shortUrl || giftId}`;
 
-  // Fetch gift to get the correct shortUrl (for custom URLs)
+  // Verify payment and fetch gift details
   useEffect(() => {
-    if (giftId) {
-      fetch(`/api/gifts/${giftId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.shortUrl) setShortUrl(data.shortUrl);
-        })
-        .catch(() => {});
-    }
-  }, [giftId]);
+    async function verifyAndFetch() {
+      // Verify payment with Paystack
+      if (reference) {
+        try {
+          const verifyRes = await fetch(`/api/payment/verify?reference=${reference}`);
+          const verifyData = await verifyRes.json();
+          if (verifyData.status === 'completed') {
+            setVerified(true);
+          }
+        } catch {
+          // Webhook will handle it
+        }
+      }
 
-  // Confirm the order on page load (fallback for when ITN webhook doesn't fire)
-  useEffect(() => {
-    if (orderId) {
-      fetch('/api/payment/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      }).catch(() => {
-        // Silent fail - ITN webhook is the primary confirmation
-      });
+      // Fetch gift to get the correct shortUrl (for custom URLs)
+      if (giftId) {
+        try {
+          const giftRes = await fetch(`/api/gifts/${giftId}`);
+          const giftData = await giftRes.json();
+          if (giftData.shortUrl) setShortUrl(giftData.shortUrl);
+        } catch {
+          // Ignore
+        }
+      }
+
+      setVerifying(false);
     }
-  }, [orderId]);
+
+    verifyAndFetch();
+  }, [reference, giftId]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(giftUrl);
@@ -134,8 +144,8 @@ function PaymentSuccessContent() {
           </>
         )}
 
-        {orderId && (
-          <p className="text-gray-600 text-xs mt-4">Order: {orderId}</p>
+        {reference && (
+          <p className="text-gray-600 text-xs mt-4">Reference: {reference}</p>
         )}
       </div>
 
