@@ -9,6 +9,7 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const giftId = searchParams.get('giftId');
   const reference = searchParams.get('reference');
+  const isDev = searchParams.get('dev') === 'true';
   const [copied, setCopied] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
@@ -21,8 +22,11 @@ function PaymentSuccessContent() {
   // Verify payment and fetch gift details
   useEffect(() => {
     async function verifyAndFetch() {
-      // Verify payment with Paystack
-      if (reference) {
+      // Dev gifts are already verified
+      if (isDev) {
+        setVerified(true);
+      } else if (reference) {
+        // Verify payment with Paystack
         try {
           const verifyRes = await fetch(`/api/payment/verify?reference=${reference}`);
           const verifyData = await verifyRes.json();
@@ -49,7 +53,7 @@ function PaymentSuccessContent() {
     }
 
     verifyAndFetch();
-  }, [reference, giftId]);
+  }, [reference, giftId, isDev]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(giftUrl);

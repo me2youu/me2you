@@ -4,7 +4,6 @@ import { db } from '@/lib/db';
 import { gifts, orders, templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateReference } from '@/lib/paystack';
-import { DEV_EMAILS } from '@/lib/constants';
 import { convertUsdToZar } from '@/lib/exchange-rate';
 
 // POST - Prepare payment data for client-side checkout
@@ -76,15 +75,6 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         // Clerk lookup failed, use fallback
       }
-    }
-
-    // Payment gate: block non-dev users when payments aren't live
-    const paymentsLive = process.env.NEXT_PUBLIC_PAYMENTS_LIVE === 'true';
-    if (!paymentsLive && !DEV_EMAILS.includes(userEmail)) {
-      return NextResponse.json(
-        { error: 'Payments are not yet available. We are launching soon!' },
-        { status: 403 }
-      );
     }
 
     // Generate unique reference
