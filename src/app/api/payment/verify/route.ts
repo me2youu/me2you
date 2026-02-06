@@ -38,12 +38,16 @@ export async function GET(request: NextRequest) {
     // Verify with Paystack
     const verification = await verifyTransaction(reference);
 
+    console.log('Payment verify - Paystack status:', verification.data.status);
+
     if (verification.data.status === 'success') {
       // Update order status
       await db
         .update(orders)
         .set({ status: 'completed' })
         .where(eq(orders.id, order.id));
+
+      console.log(`Payment verify: Order ${order.id} marked completed, giftId: ${order.giftId}`);
 
       // Activate gift expiry or apply extension
       if (order.giftId) {

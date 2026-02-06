@@ -61,14 +61,18 @@ export async function activateGiftExpiry(giftId: string): Promise<void> {
       return;
     }
 
-    // Guard: skip if already activated (prevents race between ITN and confirm)
+    // Skip if expiresAt is already set to a non-null value (already activated with a timed duration)
+    // Note: null expiresAt could mean "not yet activated" OR "lifetime", so we always recalculate for null
     if (gift.expiresAt !== null) {
       console.log(`activateGiftExpiry: Gift ${giftId} already has expiresAt set, skipping`);
       return;
     }
 
     const addons = (gift.selectedAddons as any[]) || [];
+    console.log(`activateGiftExpiry: Gift ${giftId} addons:`, JSON.stringify(addons));
+    
     const expiresAt = calculateExpiresAt(addons);
+    console.log(`activateGiftExpiry: Calculated expiresAt for ${giftId}:`, expiresAt);
 
     await db
       .update(gifts)
