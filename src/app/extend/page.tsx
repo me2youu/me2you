@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
-import PaystackPop from '@paystack/inline-js';
 
 interface GiftData {
   id: string;
@@ -116,7 +115,8 @@ function ExtendContent() {
 
       const { access_code, reference, giftId: returnedGiftId } = await response.json();
 
-      // Open Paystack popup
+      // Dynamically import Paystack to avoid SSR issues
+      const PaystackPop = (await import('@paystack/inline-js')).default;
       const popup = new PaystackPop();
       popup.resumeTransaction(access_code, {
         onSuccess: () => {

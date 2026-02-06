@@ -6,7 +6,6 @@ import Header from '@/components/Header';
 import { useUploadThing } from '@/lib/uploadthing';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { DEV_EMAILS, isPaymentsLive } from '@/lib/constants';
-import PaystackPop from '@paystack/inline-js';
 
 interface Template {
   id: string;
@@ -570,7 +569,8 @@ export default function CustomizeClient({ initialTemplate }: { initialTemplate: 
 
       const { access_code, reference, giftId: returnedGiftId } = await paymentResponse.json();
 
-      // 3. Open Paystack popup
+      // 3. Dynamically import Paystack to avoid SSR issues
+      const PaystackPop = (await import('@paystack/inline-js')).default;
       const popup = new PaystackPop();
       popup.resumeTransaction(access_code, {
         onSuccess: () => {
